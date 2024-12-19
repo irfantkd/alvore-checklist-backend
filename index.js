@@ -5,8 +5,6 @@ const cors = require("cors");
 require("dotenv").config();
 const UserRouts = require("./routes/User.routes");
 
-const port = 3003;
-
 // Middlewares
 app.use(express.json());
 app.use(cors());
@@ -18,12 +16,17 @@ app.get("/", (req, res) => {
 
 app.use("/auth", UserRouts);
 
+// Database connection and export
 mongoose
   .connect(
     "mongodb+srv://alvore_fleet:7Urk182@cluster0.fvl2h.mongodb.net/alvoreDB"
   )
   .then(() => {
-    app.listen(port, () => {
-      console.log(`Server is statring on port: ${port}`);
-    });
+    console.log("Connected to MongoDB");
+  })
+  .catch((error) => {
+    console.error("MongoDB connection error:", error);
   });
+
+// Export the app for Vercel
+module.exports = app;
