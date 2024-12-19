@@ -20,7 +20,7 @@ app.use("/auth", UserRouts);
 
 mongoose
   .connect(
-    "mongodb+srv://irfantkd:3Bbk1NoVRqjKDeOD@notetakeing.yze0q5w.mongodb.net/AlvoreCarDB"
+    "mongodb+srv://alvore_fleet:7Urk182@cluster0.fvl2h.mongodb.net/alvoreDB"
   )
   .then(() => {
     app.listen(port, () => {
