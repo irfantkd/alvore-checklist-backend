@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 require("dotenv").config();
 const UserRouts = require("./routes/User.routes");
+const CarRouts = require("./routes/Car.routes");
 
 // Middlewares
 app.use(express.json());
@@ -15,6 +16,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/auth", UserRouts);
+app.use("/car", CarRouts);
 
 // Database connection and export
 mongoose
