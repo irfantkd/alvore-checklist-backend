@@ -16,17 +16,17 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "", // Optional: provide a default value if the image is not provided
     },
-    email: {
+    username: {
       type: String,
-      required: [true, "Email is required"],
+      required: [true, "Username is required"],
       unique: true,
       trim: true,
       lowercase: true,
       validate: {
         validator: function (v) {
-          return /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(v); // Email validation regex
+          return /^[a-zA-Z0-9_.-]{3,20}$/.test(v); // Username validation regex
         },
-        message: (props) => `${props.value} is not a valid email!`,
+        message: (props) => `${props.value} is not a valid username!`,
       },
     },
     licensenumber: {
@@ -53,6 +53,8 @@ const userSchema = new mongoose.Schema(
     },
     phone: {
       type: String,
+      unique: true,
+
       required: [true, "Phone Number is required"],
       validate: {
         validator: function (v) {

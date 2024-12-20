@@ -5,6 +5,8 @@ const cors = require("cors");
 require("dotenv").config();
 const UserRouts = require("./routes/User.routes");
 const CarRouts = require("./routes/Car.routes");
+const BranchRouts = require("./routes/Branch.routes");
+
 const port = 3003; // Define the port
 
 // Middlewares
@@ -18,6 +20,7 @@ app.get("/", (req, res) => {
 
 app.use("/auth", UserRouts);
 app.use("/car", CarRouts);
+app.use("/branch", BranchRouts);
 
 // Database connection
 mongoose

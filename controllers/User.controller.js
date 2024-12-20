@@ -11,12 +11,18 @@ const {
 // Register User
 const registerUser = async (req, res) => {
   try {
-    const { firstname, lastname, email, password, phone, role } = req.body;
+    const { firstname, lastname, username, password, phone, role } = req.body;
 
-    // Check if the user already exists
-    const existingUser = await UserModel.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
+    // Check if the username already exists
+    const existingUsername = await UserModel.findOne({ username });
+    if (existingUsername) {
+      return res.status(400).json({ message: "Username already exists" });
+    }
+
+    // Check if the phone number already exists
+    const existingPhone = await UserModel.findOne({ phone });
+    if (existingPhone) {
+      return res.status(400).json({ message: "Phone number already exists" });
     }
 
     // Hash the password using bcrypt
@@ -26,7 +32,7 @@ const registerUser = async (req, res) => {
     const newUser = new UserModel({
       firstname,
       lastname,
-      email,
+      username,
       password: hashedPassword,
       phone,
       role,
@@ -37,8 +43,8 @@ const registerUser = async (req, res) => {
 
     // Generate a JWT token
     const token = jwt.sign(
-      { userid: newUser._id, email: newUser.email },
-      JWT_SECRET || "secretKey",
+      { userid: newUser._id, username: newUser.username },
+      process.env.JWT_SECRET || "secretKey",
       { expiresIn: "1h" }
     );
 
@@ -49,6 +55,15 @@ const registerUser = async (req, res) => {
     });
   } catch (error) {
     console.error("Error registering user:", error.message);
+
+    // Handle unique constraint errors from Mongoose
+    if (error.code === 11000) {
+      const duplicateKey = Object.keys(error.keyValue)[0];
+      return res
+        .status(400)
+        .json({ message: `${duplicateKey} already exists` });
+    }
+
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -56,10 +71,10 @@ const registerUser = async (req, res) => {
 // Login User
 const loginUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
 
-    // Find the user by email
-    const user = await UserModel.findOne({ email }).select("+password");
+    // Find the user by username
+    const user = await UserModel.findOne({ username }).select("+password");
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -67,14 +82,14 @@ const loginUser = async (req, res) => {
     // Compare the password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid email or password" });
+      return res.status(400).json({ message: "Invalid username or password" });
     }
 
     // Generate a JWT token
     const token = jwt.sign(
-      { userid: user._id, email: user.email, role: user.role },
+      { userid: user._id, username: user.username, role: user.role },
       JWT_SECRET || "secretKey",
-      { expiresIn: "1h" }
+      { expiresIn: "30d" }
     );
 
     res.status(200).json({
@@ -83,7 +98,7 @@ const loginUser = async (req, res) => {
         id: user._id,
         firstname: user.firstname,
         lastname: user.lastname,
-        email: user.email,
+        username: user.username,
         phone: user.phone,
         profileimage: user.profileimage,
         role: user.role,
@@ -165,7 +180,7 @@ const editProfile = async (req, res) => {
         id: updatedUser._id,
         firstname: updatedUser.firstname,
         lastname: updatedUser.lastname,
-        email: updatedUser.email,
+        username: updatedUser.username,
         phone: updatedUser.phone,
         profileimage: updatedUser.profileimage,
         role: updatedUser.role, // Role is returned but cannot be updated
@@ -204,7 +219,7 @@ const updateUserRole = async (req, res) => {
         id: updatedUser._id,
         firstname: updatedUser.firstname,
         lastname: updatedUser.lastname,
-        email: updatedUser.email,
+        username: updatedUser.username,
         phone: updatedUser.phone,
         profileimage: updatedUser.profileimage,
         role: updatedUser.role,
