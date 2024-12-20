@@ -53,6 +53,7 @@ const userSchema = new mongoose.Schema(
     },
     phone: {
       type: String,
+      required: [true, "Phone Number is required"],
       validate: {
         validator: function (v) {
           return /^\+?[1-9]\d{1,14}$/.test(v); // Validate international phone numbers
@@ -60,13 +61,19 @@ const userSchema = new mongoose.Schema(
         message: (props) => `${props.value} is not a valid phone number!`,
       },
     },
+    otp: {
+      type: String, // OTP field
+      select: false, // Prevent OTP from being returned in queries
+    },
+    otpExpiry: {
+      type: Date, // OTP expiration time
+      select: false,
+    },
   },
   {
     timestamps: true, // Automatically adds createdAt and updatedAt fields
   }
 );
-
-// Indexing email for faster searches (optional but recommended)
 
 const UserModel = mongoose.model("User", userSchema);
 

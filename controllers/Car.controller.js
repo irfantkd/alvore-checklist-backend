@@ -3,6 +3,13 @@ const CarModel = require("../models/Car.model");
 // Create a new car
 const createCar = async (req, res) => {
   try {
+    if (req.body.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to create a car",
+      });
+    }
+
     const newCar = await CarModel.create(req.body);
     res.status(201).json({
       success: true,
@@ -61,6 +68,13 @@ const getCarById = async (req, res) => {
 // Update a car by ID
 const updateCar = async (req, res) => {
   try {
+    if (req.body.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to update a car",
+      });
+    }
+
     const updatedCar = await CarModel.findByIdAndUpdate(
       req.params.id,
       req.body,
@@ -92,6 +106,13 @@ const updateCar = async (req, res) => {
 // Delete a car by ID
 const deleteCar = async (req, res) => {
   try {
+    if (req.body.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to delete a car",
+      });
+    }
+
     const deletedCar = await CarModel.findByIdAndDelete(req.params.id);
     if (!deletedCar) {
       return res.status(404).json({

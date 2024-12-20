@@ -5,6 +5,7 @@ const cors = require("cors");
 require("dotenv").config();
 const UserRouts = require("./routes/User.routes");
 const CarRouts = require("./routes/Car.routes");
+const port = 3003; // Define the port
 
 // Middlewares
 app.use(express.json());
@@ -18,7 +19,7 @@ app.get("/", (req, res) => {
 app.use("/auth", UserRouts);
 app.use("/car", CarRouts);
 
-// Database connection and export
+// Database connection
 mongoose
   .connect(
     "mongodb+srv://alvore_fleet:7Urk182@cluster0.fvl2h.mongodb.net/alvoreDB"
@@ -29,6 +30,11 @@ mongoose
   .catch((error) => {
     console.error("MongoDB connection error:", error);
   });
+
+// Start the server
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
 
 // Export the app for Vercel
 module.exports = app;

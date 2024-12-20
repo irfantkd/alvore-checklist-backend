@@ -6,14 +6,15 @@ const {
   updateCar,
   deleteCar,
 } = require("../controllers/Car.controller");
+const AuthCheck = require("../middlewares/Auth.middleware");
 
 const router = express.Router();
 
-// Use controller methods
-router.post("/create", createCar);
-router.get("/get_all", getAllCars);
-router.get("/getby_id:id", getCarById);
-router.put("/update:id", updateCar);
-router.delete("/delete:id", deleteCar);
+// Protect the routes with AuthCheck middleware
+router.post("/create", AuthCheck, createCar);
+router.get("/get_all", AuthCheck, getAllCars);
+router.get("/getby_id/:id", AuthCheck, getCarById);
+router.put("/update/:id", AuthCheck, updateCar);
+router.delete("/delete/:id", AuthCheck, deleteCar);
 
 module.exports = router;

@@ -1,18 +1,39 @@
 const express = require("express");
-const router = express.Router();
-
-// Import your controller functions
+// const {
+//   registerUser,
+//   loginUser,
+//   getAllUsers,
+//   getUserById,
+//   updateUserRole,
+// } = require("../controllers/User.controllerr");
+const AuthCheck = require("../middlewares/Auth.middleware");
 const {
   registerUser,
   loginUser,
-  forgotPassword,
+  getAllUsers,
+  getUserById,
+  updateUserRole,
   editProfile,
-} = require("../controllers/User.controller.js");
+  sendOTP,
+  verifyOTP,
+  resetPassword,
+} = require("../controllers/User.controller");
 
-// Define routes
-router.post("/register", registerUser); // Ensure 'createUser' is a valid function
-router.post("/login", loginUser); // Ensure 'createUser' is a valid function
-router.post("/forget-password", forgotPassword);
-router.post("/edit-profile", editProfile);
+const router = express.Router();
+
+// Public routes
+router.post("/register", registerUser);
+router.post("/login", loginUser);
+
+// Protected routes
+router.get("/users", AuthCheck, getAllUsers); // Admin only
+router.get("/users/:id", AuthCheck, getUserById); // Admin or user
+router.put("/users/role", AuthCheck, updateUserRole); // Admin only
+router.put("/user/update", AuthCheck, editProfile); // Admin only
+
+// otp routes
+router.post("/forgot-password/send-otp", sendOTP);
+router.post("/forgot-password/verify-otp", verifyOTP);
+router.post("/forgot-password/reset", resetPassword);
 
 module.exports = router;
