@@ -20,7 +20,6 @@ app.use(express.json());
 app.use(cors());
 
 const secret = crypto.randomBytes(32).toString("hex");
-console.log(secret);
 
 app.use(
   session({

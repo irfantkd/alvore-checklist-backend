@@ -22,9 +22,7 @@ const sendSMSUnimatrix = async (phone, message) => {
     // Create the request payload as JSON
     const payload = {
       to: phone, // Add the phone number
-      message,
     };
-    console.log(message);
 
     // Make the API request
     const response = await axios.post(
