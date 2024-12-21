@@ -6,6 +6,7 @@ require("dotenv").config();
 const UserRouts = require("./routes/User.routes");
 const CarRouts = require("./routes/Car.routes");
 const BranchRouts = require("./routes/Branch.routes");
+const RouteRouts = require("./routes/Route.routes");
 
 const port = 3003; // Define the port
 
@@ -21,6 +22,7 @@ app.get("/", (req, res) => {
 app.use("/auth", UserRouts);
 app.use("/car", CarRouts);
 app.use("/branch", BranchRouts);
+app.use("/route", RouteRouts);
 
 // Database connection
 mongoose

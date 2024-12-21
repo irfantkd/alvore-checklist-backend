@@ -41,7 +41,7 @@ const carSchema = new mongoose.Schema(
     },
     insuranceUpload: {
       type: String,
-      required: [true, "Insurance upload is required"],
+      // required: [true, "Insurance upload is required"],
     },
     insuranceCompany: {
       type: String,
@@ -55,7 +55,7 @@ const carSchema = new mongoose.Schema(
     },
     vehicleCardUpload: {
       type: String,
-      required: [true, "Vehicle Card upload is required"],
+      // required: [true, "Vehicle Card upload is required"],
     },
   },
   {
