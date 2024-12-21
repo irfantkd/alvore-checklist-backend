@@ -293,7 +293,8 @@ const sendOTP = async (req, res) => {
 
 const verifyOTP = async (req, res) => {
   try {
-    const { otp } = req.body;
+    const { otp, phone } = req.body;
+    console.log(otp);
 
     // Check if OTP is provided
     if (!otp) {
@@ -301,13 +302,11 @@ const verifyOTP = async (req, res) => {
     }
 
     // Retrieve phone number from session
-    const phone = req.session.phone;
-    console.log(phone);
 
     if (!phone) {
       return res.status(400).json({
         success: false,
-        error: "Phone number not found in session. Send OTP again.",
+        error: "Phone number is required!",
       });
     }
 
