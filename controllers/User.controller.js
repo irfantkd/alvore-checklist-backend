@@ -1,4 +1,6 @@
 const UserModel = require("../models/User.model.js");
+const session = require("express-session");
+
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { default: mongoose } = require("mongoose");
@@ -235,20 +237,27 @@ const updateUserRole = async (req, res) => {
 const sendOTP = async (req, res) => {
   try {
     const { phone } = req.body;
+    console.log(phone);
 
-    // Ensure phone number is valid and includes the country code
+    // Validate the phone number format
     if (!phone || !/^\+?\d{10,15}$/.test(phone)) {
       return res
         .status(400)
-        .json({ message: "Invalid phone number inter with country code" });
+        .json({ message: "Invalid phone number. Enter with country code" });
     }
 
+    // Check if the user exists
     const user = await UserModel.findOne({ phone });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const response = await sendSMSUnimatrix(phone); // Send the OTP
+    // Store the phone number in session
+    req.session.phone = phone;
+    console.log(req.session.phone);
+
+    // Send the OTP
+    const response = await sendSMSUnimatrix(phone);
 
     if (!response.success) {
       return res.status(500).json({ message: "Failed to send OTP" });
@@ -262,35 +271,105 @@ const sendOTP = async (req, res) => {
 };
 
 // Verify OTP
+// const verifyOTP = async (req, res) => {
+//   const { otp, phone } = req.body;
+
+//   if (!otp || !phone) {
+//     return res
+//       .status(400)
+//       .json({ success: false, error: "OTP and phone number are required" });
+//   }
+
+//   const response = await verifyOTPUnimatrix(phone, otp);
+
+//   if (response.success) {
+//     console.log("OTP verified successfully:", response.data);
+//     return res.status(200).json({ success: true, data: response.data });
+//   } else {
+//     console.error("OTP verification failed:", response.error);
+//     return res.status(400).json({ success: false, error: response.error });
+//   }
+// };
+
 const verifyOTP = async (req, res) => {
-  const { otp, phone } = req.body;
+  try {
+    const { otp } = req.body;
 
-  if (!otp || !phone) {
-    return res
-      .status(400)
-      .json({ success: false, error: "OTP and phone number are required" });
-  }
+    // Check if OTP is provided
+    if (!otp) {
+      return res.status(400).json({ success: false, error: "OTP is required" });
+    }
 
-  const response = await verifyOTPUnimatrix(phone, otp);
+    // Retrieve phone number from session
+    const phone = req.session.phone;
+    console.log(phone);
 
-  if (response.success) {
-    console.log("OTP verified successfully:", response.data);
-    return res.status(200).json({ success: true, data: response.data });
-  } else {
-    console.error("OTP verification failed:", response.error);
-    return res.status(400).json({ success: false, error: response.error });
+    if (!phone) {
+      return res.status(400).json({
+        success: false,
+        error: "Phone number not found in session. Send OTP again.",
+      });
+    }
+
+    // Verify the OTP using the phone number
+    const response = await verifyOTPUnimatrix(phone, otp);
+
+    if (response.success) {
+      console.log("OTP verified successfully:", response.data);
+      return res.status(200).json({ success: true, data: response.data });
+    } else {
+      console.error("OTP verification failed:", response.error);
+      return res.status(400).json({ success: false, error: response.error });
+    }
+  } catch (error) {
+    console.error("Error verifying OTP:", error.message);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
 // Reset Password
+// const resetPassword = async (req, res) => {
+//   try {
+//     const { phone, newPassword } = req.body;
+
+//     // Find user by phone
+//     const user = await UserModel.findOne({ phone });
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found" });
+//     }
+
+//     // Hash the new password
+//     const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+//     // Update user's password
+//     user.password = hashedPassword;
+//     await user.save();
+
+//     res.status(200).json({ message: "Password reset successfully" });
+//   } catch (error) {
+//     console.error("Error resetting password:", error.message);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
 const resetPassword = async (req, res) => {
   try {
-    const { phone, newPassword } = req.body;
+    const { newPassword } = req.body;
+
+    // Retrieve phone number from session storage
+    const phone = req.session.phone;
+
+    // Check if phone exists in session
+    if (!phone) {
+      return res
+        .status(401)
+        .json({ message: "Unauthorized: No phone number in session." });
+    }
 
     // Find user by phone
     const user = await UserModel.findOne({ phone });
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: "User not found." });
     }
 
     // Hash the new password
@@ -300,10 +379,10 @@ const resetPassword = async (req, res) => {
     user.password = hashedPassword;
     await user.save();
 
-    res.status(200).json({ message: "Password reset successfully" });
+    res.status(200).json({ message: "Password reset successfully." });
   } catch (error) {
     console.error("Error resetting password:", error.message);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error." });
   }
 };
 
