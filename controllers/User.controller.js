@@ -232,65 +232,23 @@ const updateUserRole = async (req, res) => {
 };
 
 // Send OTP
-// const sendOTP = async (req, res) => {
-//   try {
-//     const { phone } = req.body;
-
-//     // Find user by phone
-//     const user = await UserModel.findOne({ phone });
-//     if (!user) {
-//       return res.status(404).json({ message: "User not found" });
-//     }
-
-//     // Generate OTP
-//     const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
-//     const otpExpiry = Date.now() + 5 * 60 * 1000; // OTP valid for 5 minutes
-
-//     // Update user with OTP and expiry
-//     user.otp = otp;
-//     user.otpExpiry = otpExpiry;
-//     await user.save();
-
-//     // Send OTP via Unimatrix
-//     const response = await sendSMSUnimatrix(phone, `Your OTP is: ${otp}`);
-//     if (!response.success) {
-//       return res.status(500).json({ message: "Failed to send OTP" });
-//     }
-
-//     res.status(200).json({ message: "OTP sent successfully" });
-//   } catch (error) {
-//     console.error("Error sending OTP:", error.message);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
-
 const sendOTP = async (req, res) => {
   try {
     const { phone } = req.body;
 
     // Ensure phone number is valid and includes the country code
     if (!phone || !/^\+?\d{10,15}$/.test(phone)) {
-      return res.status(400).json({ message: "Invalid phone number" });
+      return res
+        .status(400)
+        .json({ message: "Invalid phone number inter with country code" });
     }
 
-    // Generate OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
-    const otpExpiry = Date.now() + 5 * 60 * 1000; // OTP valid for 5 minutes
-
-    // Update user with OTP and expiry (assuming user model exists and is valid)
     const user = await UserModel.findOne({ phone });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    user.otp = otp;
-    user.otpExpiry = otpExpiry;
-    await user.save();
-    console.log(user);
-
-    // Send OTP via Unimatrix
-    const message = `Your OTP is: ${otp}`;
-    const response = await sendSMSUnimatrix(phone, message); // Send the OTP
+    const response = await sendSMSUnimatrix(phone); // Send the OTP
 
     if (!response.success) {
       return res.status(500).json({ message: "Failed to send OTP" });
@@ -304,50 +262,23 @@ const sendOTP = async (req, res) => {
 };
 
 // Verify OTP
-// const verifyOTP = async (req, res) => {
-//   try {
-//     const { phone, otp } = req.body;
-
-//     // Validate input
-//     if (!phone || !otp) {
-//       return res.status(400).json({ message: "Phone and OTP are required" });
-//     }
-
-//     // Find user by phone
-//     const user = await UserModel.findOne({ phone });
-//     if (!user) {
-//       return res.status(404).json({ message: "User not found" });
-//     }
-
-//     // Verify OTP with Unimatrix API
-//     const response = await verifyOTPUnimatrix(otp);
-//     if (!response.success) {
-//       return res
-//         .status(400)
-//         .json({ message: response.error || "Invalid or expired OTP" });
-//     }
-
-//     // Clear OTP fields after verification
-//     user.otp = null; // Optional: Only if you are storing OTP locally for some reason
-//     user.otpExpiry = null; // Optional: Clear expiry in your database if needed
-//     await user.save();
-
-//     return res.status(200).json({ message: "OTP verified successfully" });
-//   } catch (error) {
-//     console.error("Error verifying OTP:", error.message);
-//     return res.status(500).json({ message: "Server error" });
-//   }
-// };
-
 const verifyOTP = async (req, res) => {
-  console.log(req.body.otp);
   const { otp, phone } = req.body;
 
-  const response = await verifyOTPUnimatrix(otp, phone);
+  if (!otp || !phone) {
+    return res
+      .status(400)
+      .json({ success: false, error: "OTP and phone number are required" });
+  }
+
+  const response = await verifyOTPUnimatrix(phone, otp);
+
   if (response.success) {
     console.log("OTP verified successfully:", response.data);
+    return res.status(200).json({ success: true, data: response.data });
   } else {
     console.error("OTP verification failed:", response.error);
+    return res.status(400).json({ success: false, error: response.error });
   }
 };
 

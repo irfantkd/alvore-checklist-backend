@@ -2,9 +2,8 @@ const axios = require("axios");
 const https = require("https");
 
 // Unimatrix Service Configuration
-const UNIMATRIX_API_URL_VERIFY =
-  "https://api.unimtx.com/?action=otp.verify&accessKeyId=MmK6FpAXkWJyMAfWLAGw75"; // Replace with your actual access key
-const UNIMATRIX_API_KEY = "MmK6FpAXkWJyMAfWLAGw75"; // Replace with your actual API key
+const UNIMATRIX_API_URL_VERIFY = "https://api.unimtx.com"; // Base API URL
+const UNIMATRIX_API_KEY = "MmK6FpAXkWJyMAfWLAGw75"; // Replace with your actual access key
 
 // Create an HTTPS agent with the latest TLS protocol
 const agent = new https.Agent({
@@ -19,19 +18,23 @@ const agent = new https.Agent({
  */
 const verifyOTPUnimatrix = async (phone, otp) => {
   try {
-    // Create the request payload as JSON
+    // Validate phone number format (E.164)
+    if (!/^\+?\d{10,15}$/.test(phone)) {
+      return { success: false, error: "Invalid phone number format" };
+    }
+
+    // Create the request payload
     const payload = {
-      //   to: phone, // Add the phone number
+      to: phone, // Add the phone number
       code: otp, // OTP to verify
     };
 
     // Make the API request
     const response = await axios.post(
-      UNIMATRIX_API_URL_VERIFY,
+      `${UNIMATRIX_API_URL_VERIFY}?action=otp.verify&accessKeyId=${UNIMATRIX_API_KEY}`, // Append accessKeyId to the query string
       payload, // Send the payload in the request body
       {
         headers: {
-          Authorization: `Bearer ${UNIMATRIX_API_KEY}`, // Include the API key in the Authorization header
           "Content-Type": "application/json", // Set content type to JSON
         },
         httpsAgent: agent, // Attach the custom HTTPS agent for TLS
