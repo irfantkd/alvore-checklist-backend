@@ -231,6 +231,7 @@ const updateUserRole = async (req, res) => {
   }
 };
 
+// Send OTP
 const sendOTP = async (req, res) => {
   try {
     const { phone } = req.body;
