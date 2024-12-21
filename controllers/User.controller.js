@@ -307,16 +307,11 @@ const verifyOTP = async (req, res) => {
 // Reset Password
 const resetPassword = async (req, res) => {
   try {
-    const { newPassword } = req.body;
-
-    // Retrieve phone number from session storage
-    const phone = req.session.phone;
+    const { newPassword, phone } = req.body;
 
     // Check if phone exists in session
     if (!phone) {
-      return res
-        .status(401)
-        .json({ message: "Unauthorized: No phone number in session." });
+      return res.status(401).json({ message: " You are not Unauthorized" });
     }
 
     // Find user by phone
