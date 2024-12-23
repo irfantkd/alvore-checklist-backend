@@ -1,34 +1,172 @@
 const UserModel = require("../models/User.model.js");
 const session = require("express-session");
-
+const fs = require("fs");
+const { uploadToSirv } = require("../utils/sirvUploader.js");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { default: mongoose } = require("mongoose");
-const JWT_SECRET = "w456789ol,mnhytrsxcvt#$rfvZx789&(&C5@#$RDG124gcjpoi5";
+const JWT_SECRET = process.env.JWT_SECRET;
 const { sendSMSUnimatrix } = require("../services/unimatrix.service.js");
 const {
   verifyOTPUnimatrix,
 } = require("../services/unimatrix.varify.service.js");
 
 // Register User
+// const registerUser = async (req, res) => {
+//   try {
+//     const { firstname, lastname, username, password, phone, role } = req.body;
+
+//     // Check if the username already exists
+//     const existingUsername = await UserModel.findOne({ username });
+//     if (existingUsername) {
+//       return res.status(400).json({ message: "Username already exists" });
+//     }
+
+//     // Check if the phone number already exists
+//     const existingPhone = await UserModel.findOne({ phone });
+//     if (existingPhone) {
+//       return res.status(400).json({ message: "Phone number already exists" });
+//     }
+
+//     // Hash the password using bcrypt
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     // Create a new user object
+//     const newUser = new UserModel({
+//       firstname,
+//       lastname,
+//       username,
+//       password: hashedPassword,
+//       phone,
+//       role,
+//     });
+
+//     // Save the user to the database
+//     await newUser.save();
+
+//     // Generate a JWT token
+//     const token = jwt.sign(
+//       { userid: newUser._id, username: newUser.username },
+//       process.env.JWT_SECRET || "secretKey",
+//       { expiresIn: "1h" }
+//     );
+
+//     res.status(201).json({
+//       message: "User registered successfully",
+//       user: newUser,
+//       token,
+//     });
+//   } catch (error) {
+//     console.error("Error registering user:", error.message);
+
+//     // Handle unique constraint errors from Mongoose
+//     if (error.code === 11000) {
+//       const duplicateKey = Object.keys(error.keyValue)[0];
+//       return res
+//         .status(400)
+//         .json({ message: `${duplicateKey} already exists` });
+//     }
+
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+// const registerUser = async (req, res) => {
+//   try {
+//     const { firstname, lastname, username, password, phone, role } = req.body;
+//     const filePath = path.join(__dirname, "uploads", req.file.filename);
+//     const fileUrl = await uploadToSirv(filePath, req.file.originalname);
+//     fs.unlinkSync(filePath);
+//     const file = req.file; // Profile image file
+//     console.log("file console", req.file);
+//     // Check if username already exists
+//     const existingUsername = await UserModel.findOne({ username });
+//     if (existingUsername) {
+//       return res.status(400).json({ message: "Username already exists" });
+//     }
+
+//     // Check if phone number already exists
+//     const existingPhone = await UserModel.findOne({ phone });
+//     if (existingPhone) {
+//       return res.status(400).json({ message: "Phone number already exists" });
+//     }
+
+//     // Hash the password
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     // Handle profile image upload
+//     let profileImageUrl = "";
+//     if (file) {
+//       const filePath = path.resolve(file.path);
+//       profileImageUrl = await uploadToSirv(filePath, file.originalname);
+//       fs.unlinkSync(filePath); // Remove temporary file after upload
+//     }
+
+//     // Create a new user object
+//     const newUser = new UserModel({
+//       firstname,
+//       lastname,
+//       username,
+//       password: hashedPassword,
+//       phone,
+//       role,
+//       profileimage: profileImageUrl,
+//     });
+
+//     // Save the user to the database
+//     await newUser.save();
+
+//     // Generate a JWT token
+//     const token = jwt.sign(
+//       { userid: newUser._id, username: newUser.username },
+//       process.env.JWT_SECRET || "secretKey",
+//       { expiresIn: "1h" }
+//     );
+
+//     res.status(201).json({
+//       message: "User registered successfully",
+//       user: newUser,
+//       token,
+//     });
+//   } catch (error) {
+//     console.error("Error registering user:", error.message);
+
+//     // Handle unique constraint errors from Mongoose
+//     if (error.code === 11000) {
+//       const duplicateKey = Object.keys(error.keyValue)[0];
+//       return res
+//         .status(400)
+//         .json({ message: `${duplicateKey} already exists` });
+//     }
+
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
 const registerUser = async (req, res) => {
   try {
     const { firstname, lastname, username, password, phone, role } = req.body;
 
-    // Check if the username already exists
+    // Check if username already exists
     const existingUsername = await UserModel.findOne({ username });
     if (existingUsername) {
       return res.status(400).json({ message: "Username already exists" });
     }
 
-    // Check if the phone number already exists
+    // Check if phone number already exists
     const existingPhone = await UserModel.findOne({ phone });
     if (existingPhone) {
       return res.status(400).json({ message: "Phone number already exists" });
     }
 
-    // Hash the password using bcrypt
+    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Handle profile image upload
+    const fileBuffer = req.file.buffer; // The image file is now stored as a buffer
+    const originalName = req.file.originalname; // Original file name
+    const fileUrl = await uploadToSirv(fileBuffer, originalName);
+    console.log("Uploaded file URL:", fileUrl);
 
     // Create a new user object
     const newUser = new UserModel({
@@ -38,6 +176,7 @@ const registerUser = async (req, res) => {
       password: hashedPassword,
       phone,
       role,
+      profileimage: fileUrl,
     });
 
     // Save the user to the database
@@ -74,6 +213,7 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
   try {
     const { username, password } = req.body;
+    console.log(username, password);
 
     // Find the user by username
     const user = await UserModel.findOne({ username }).select("+password");
@@ -155,8 +295,7 @@ const getUserById = async (req, res) => {
 // Edit Profile (User cannot update the role)
 const editProfile = async (req, res) => {
   try {
-    const { userid, firstname, lastname, phone, profileimage, role } = req.body;
-
+    const { userid, firstname, lastname, phone, role } = req.body;
     // Ensure the role is not included in the update
     if (role !== "admin") {
       return res.status(403).json({
@@ -164,11 +303,14 @@ const editProfile = async (req, res) => {
       });
     }
     const objid = new mongoose.Types.ObjectId(userid);
-
+    const fileBuffer = req.file.buffer; // The image file is now stored as a buffer
+    const originalName = req.file.originalname; // Original file name
+    const fileUrl = await uploadToSirv(fileBuffer, originalName);
+    console.log("Uploaded file URL:", fileUrl);
     // Find the user and update their profile
     const updatedUser = await UserModel.findByIdAndUpdate(
       objid,
-      { firstname, lastname, phone, profileimage },
+      { firstname, lastname, phone, profileimage: fileUrl },
       { new: true, runValidators: true }
     );
 
@@ -178,15 +320,7 @@ const editProfile = async (req, res) => {
 
     res.status(200).json({
       message: "Profile updated successfully",
-      user: {
-        id: updatedUser._id,
-        firstname: updatedUser.firstname,
-        lastname: updatedUser.lastname,
-        username: updatedUser.username,
-        phone: updatedUser.phone,
-        profileimage: updatedUser.profileimage,
-        role: updatedUser.role, // Role is returned but cannot be updated
-      },
+      user: updatedUser,
     });
   } catch (error) {
     console.error("Error updating profile:", error.message);

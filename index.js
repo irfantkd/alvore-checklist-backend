@@ -1,64 +1,62 @@
+"use strict";
+
 const express = require("express");
 const app = express();
 const session = require("express-session");
-
 const mongoose = require("mongoose");
 const cors = require("cors");
 require("dotenv").config();
-const UserRouts = require("./routes/User.routes");
-const CarRouts = require("./routes/Car.routes");
-const BranchRouts = require("./routes/Branch.routes");
-
-const RouteRouts = require("./routes/Route.routes");
-
 const crypto = require("crypto");
 
-const port = 3003; // Define the port
+// Import routes
+const UserRoutes = require("./routes/User.routes");
+const CarRoutes = require("./routes/Car.routes");
+const BranchRoutes = require("./routes/Branch.routes");
+const RouteRoutes = require("./routes/Route.routes");
 
 // Middlewares
-app.use(express.json());
-app.use(cors());
+app.use(express.json()); // For parsing JSON requests
+app.use(cors()); // For handling Cross-Origin requests
 
 const secret = crypto.randomBytes(32).toString("hex");
-
 app.use(
   session({
-    secret: secret || "your-secret-key", // Use environment variable for security
+    secret: secret || "your-secret-key",
     resave: false, // Prevent resaving sessions if unchanged
     saveUninitialized: false, // Don't save empty sessions
     cookie: {
-      httpOnly: true, // Prevent client-side JavaScript from accessing cookies
-      secure: false, // Set to true if using HTTPS
-      maxAge: 30 * 60 * 1000, // Session expiration (30 minutes)
+      httpOnly: true,
+      secure: false, // Change to true if using HTTPS
+      maxAge: 30 * 60 * 1000, // Session expiration: 30 minutes
     },
   })
 );
-// Routes
+
+// Define a test route
 app.get("/", (req, res) => {
-  res.send("Hello, world!");
+  res.send("Welcome to the API");
 });
 
-app.use("/auth", UserRouts);
-app.use("/car", CarRouts);
-app.use("/branch", BranchRouts);
-app.use("/route", RouteRouts);
+// Use routes
+app.use("/auth", UserRoutes);
+app.use("/car", CarRoutes);
+app.use("/branch", BranchRoutes);
+app.use("/route", RouteRoutes);
 
-// Database connection
+// Connect to MongoDB
 mongoose
-  .connect(
-    "mongodb+srv://alvore_fleet:7Urk182@cluster0.fvl2h.mongodb.net/alvoreDB"
-  )
-  .then(() => {
-    console.log("Connected to MongoDB");
+  .connect(process.env.MONGO_URI || "", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
   })
-  .catch((error) => {
-    console.error("MongoDB connection error:", error);
-  });
+  .then(() => console.log("Connected to MongoDB"))
+  .catch((error) => console.error("MongoDB connection error:", error));
 
 // Start the server
+const port = process.env.PORT;
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  console.log(`Server is running on http://localhost:${port}`);
 });
 
-// Export the app for Vercel
+// Export the app for deployment (e.g., Vercel)
 module.exports = app;

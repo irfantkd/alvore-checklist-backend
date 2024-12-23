@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const JWT_SECRET = "w456789ol,mnhytrsxcvt#$rfvZx789&(&C5@#$RDG124gcjpoi5";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const AuthCheck = async (req, res, next) => {
   try {

@@ -2,8 +2,8 @@ const axios = require("axios");
 const https = require("https");
 
 // Unimatrix Service Configuration
-const UNIMATRIX_API_URL_VERIFY = "https://api.unimtx.com"; // Base API URL
-const UNIMATRIX_API_KEY = "MmK6FpAXkWJyMAfWLAGw75"; // Replace with your actual access key
+const UNIMATRIX_API_URL_VERIFY = process.env.UNIMATRIX_API_URL_VERIFY; // Base API URL
+const UNIMATRIX_API_KEY = process.env.UNIMATRIX_API_KEY; // Replace with your actual access key
 
 // Create an HTTPS agent with the latest TLS protocol
 const agent = new https.Agent({

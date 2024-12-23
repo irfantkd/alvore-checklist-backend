@@ -1,4 +1,5 @@
 const CarModel = require("../models/Car.model");
+const { uploadToSirv } = require("../utils/sirvUploader");
 
 // Create a new car
 const createCar = async (req, res) => {
@@ -10,7 +11,36 @@ const createCar = async (req, res) => {
       });
     }
 
-    const newCar = await CarModel.create(req.body);
+    // Ensure both files are uploaded
+    // const vehicleCardFile = req.files.vehicleCardUpload?.[0];
+    const insuranceFile = req.files.insuranceUpload?.[0];
+
+    if (!insuranceFile) {
+      return res.status(400).json({
+        success: false,
+        message: "Both vehicleCardUpload and insuranceUpload are required",
+      });
+    }
+
+    // Upload files to Sirv
+    // const vehicleCardUrl = await uploadToSirv(
+    //   vehicleCardFile.buffer,
+    //   vehicleCardFile.originalname
+    // );
+    const insuranceUrl = await uploadToSirv(
+      insuranceFile.buffer,
+      insuranceFile.originalname
+    );
+
+    // console.log("Vehicle Card URL:", vehicleCardUrl);
+    console.log("Insurance URL:", insuranceUrl);
+
+    // Create the car record in the database
+    const newCar = await CarModel.create({
+      // vehicleCardUpload: vehicleCardUrl,
+      insuranceUpload: insuranceUrl,
+    });
+
     res.status(201).json({
       success: true,
       message: "Car created successfully",
