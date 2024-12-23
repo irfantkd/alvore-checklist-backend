@@ -14,10 +14,10 @@ const router = express.Router();
 // Protect the routes with AuthCheck middleware
 router.post(
   "/create",
-  upload.fields([
-    { name: "vehicleCardUpload", maxCount: 1 },
-    { name: "insuranceUpload", maxCount: 1 },
-  ]),
+  // upload.fields([
+  //   { name: "vehicleCardUpload", maxCount: 1 },
+  //   { name: "insuranceUpload", maxCount: 1 },
+  // ]),
   AuthCheck,
   createCar
 );

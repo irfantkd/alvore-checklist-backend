@@ -1,5 +1,4 @@
 const UserModel = require("../models/User.model.js");
-const session = require("express-session");
 const fs = require("fs");
 const { uploadToSirv } = require("../utils/sirvUploader.js");
 const bcrypt = require("bcrypt");
@@ -12,64 +11,64 @@ const {
 } = require("../services/unimatrix.varify.service.js");
 
 // Register User
-// const registerUser = async (req, res) => {
-//   try {
-//     const { firstname, lastname, username, password, phone, role } = req.body;
+const registerUser = async (req, res) => {
+  try {
+    const { firstname, lastname, username, password, phone, role } = req.body;
 
-//     // Check if the username already exists
-//     const existingUsername = await UserModel.findOne({ username });
-//     if (existingUsername) {
-//       return res.status(400).json({ message: "Username already exists" });
-//     }
+    // Check if the username already exists
+    const existingUsername = await UserModel.findOne({ username });
+    if (existingUsername) {
+      return res.status(400).json({ message: "Username already exists" });
+    }
 
-//     // Check if the phone number already exists
-//     const existingPhone = await UserModel.findOne({ phone });
-//     if (existingPhone) {
-//       return res.status(400).json({ message: "Phone number already exists" });
-//     }
+    // Check if the phone number already exists
+    const existingPhone = await UserModel.findOne({ phone });
+    if (existingPhone) {
+      return res.status(400).json({ message: "Phone number already exists" });
+    }
 
-//     // Hash the password using bcrypt
-//     const hashedPassword = await bcrypt.hash(password, 10);
+    // Hash the password using bcrypt
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-//     // Create a new user object
-//     const newUser = new UserModel({
-//       firstname,
-//       lastname,
-//       username,
-//       password: hashedPassword,
-//       phone,
-//       role,
-//     });
+    // Create a new user object
+    const newUser = new UserModel({
+      firstname,
+      lastname,
+      username,
+      password: hashedPassword,
+      phone,
+      role,
+    });
 
-//     // Save the user to the database
-//     await newUser.save();
+    // Save the user to the database
+    await newUser.save();
 
-//     // Generate a JWT token
-//     const token = jwt.sign(
-//       { userid: newUser._id, username: newUser.username },
-//       process.env.JWT_SECRET || "secretKey",
-//       { expiresIn: "1h" }
-//     );
+    // Generate a JWT token
+    const token = jwt.sign(
+      { userid: newUser._id, username: newUser.username },
+      process.env.JWT_SECRET || "secretKey",
+      { expiresIn: "1h" }
+    );
 
-//     res.status(201).json({
-//       message: "User registered successfully",
-//       user: newUser,
-//       token,
-//     });
-//   } catch (error) {
-//     console.error("Error registering user:", error.message);
+    res.status(201).json({
+      message: "User registered successfully",
+      user: newUser,
+      token,
+    });
+  } catch (error) {
+    console.error("Error registering user:", error.message);
 
-//     // Handle unique constraint errors from Mongoose
-//     if (error.code === 11000) {
-//       const duplicateKey = Object.keys(error.keyValue)[0];
-//       return res
-//         .status(400)
-//         .json({ message: `${duplicateKey} already exists` });
-//     }
+    // Handle unique constraint errors from Mongoose
+    if (error.code === 11000) {
+      const duplicateKey = Object.keys(error.keyValue)[0];
+      return res
+        .status(400)
+        .json({ message: `${duplicateKey} already exists` });
+    }
 
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
+    res.status(500).json({ message: "Server error" });
+  }
+};
 
 // const registerUser = async (req, res) => {
 //   try {
@@ -143,71 +142,71 @@ const {
 //   }
 // };
 
-const registerUser = async (req, res) => {
-  try {
-    const { firstname, lastname, username, password, phone, role } = req.body;
+// const registerUser = async (req, res) => {
+//   try {
+//     const { firstname, lastname, username, password, phone, role } = req.body;
 
-    // Check if username already exists
-    const existingUsername = await UserModel.findOne({ username });
-    if (existingUsername) {
-      return res.status(400).json({ message: "Username already exists" });
-    }
+//     // Check if username already exists
+//     const existingUsername = await UserModel.findOne({ username });
+//     if (existingUsername) {
+//       return res.status(400).json({ message: "Username already exists" });
+//     }
 
-    // Check if phone number already exists
-    const existingPhone = await UserModel.findOne({ phone });
-    if (existingPhone) {
-      return res.status(400).json({ message: "Phone number already exists" });
-    }
+//     // Check if phone number already exists
+//     const existingPhone = await UserModel.findOne({ phone });
+//     if (existingPhone) {
+//       return res.status(400).json({ message: "Phone number already exists" });
+//     }
 
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
+//     // Hash the password
+//     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Handle profile image upload
-    const fileBuffer = req.file.buffer; // The image file is now stored as a buffer
-    const originalName = req.file.originalname; // Original file name
-    const fileUrl = await uploadToSirv(fileBuffer, originalName);
-    console.log("Uploaded file URL:", fileUrl);
+//     // Handle profile image upload
+//     const fileBuffer = req.file.buffer; // The image file is now stored as a buffer
+//     const originalName = req.file.originalname; // Original file name
+//     const fileUrl = await uploadToSirv(fileBuffer, originalName);
+//     console.log("Uploaded file URL:", fileUrl);
 
-    // Create a new user object
-    const newUser = new UserModel({
-      firstname,
-      lastname,
-      username,
-      password: hashedPassword,
-      phone,
-      role,
-      profileimage: fileUrl,
-    });
+//     // Create a new user object
+//     const newUser = new UserModel({
+//       firstname,
+//       lastname,
+//       username,
+//       password: hashedPassword,
+//       phone,
+//       role,
+//       profileimage: fileUrl,
+//     });
 
-    // Save the user to the database
-    await newUser.save();
+//     // Save the user to the database
+//     await newUser.save();
 
-    // Generate a JWT token
-    const token = jwt.sign(
-      { userid: newUser._id, username: newUser.username },
-      process.env.JWT_SECRET || "secretKey",
-      { expiresIn: "1h" }
-    );
+//     // Generate a JWT token
+//     const token = jwt.sign(
+//       { userid: newUser._id, username: newUser.username },
+//       process.env.JWT_SECRET || "secretKey",
+//       { expiresIn: "1h" }
+//     );
 
-    res.status(201).json({
-      message: "User registered successfully",
-      user: newUser,
-      token,
-    });
-  } catch (error) {
-    console.error("Error registering user:", error.message);
+//     res.status(201).json({
+//       message: "User registered successfully",
+//       user: newUser,
+//       token,
+//     });
+//   } catch (error) {
+//     console.error("Error registering user:", error.message);
 
-    // Handle unique constraint errors from Mongoose
-    if (error.code === 11000) {
-      const duplicateKey = Object.keys(error.keyValue)[0];
-      return res
-        .status(400)
-        .json({ message: `${duplicateKey} already exists` });
-    }
+//     // Handle unique constraint errors from Mongoose
+//     if (error.code === 11000) {
+//       const duplicateKey = Object.keys(error.keyValue)[0];
+//       return res
+//         .status(400)
+//         .json({ message: `${duplicateKey} already exists` });
+//     }
 
-    res.status(500).json({ message: "Server error" });
-  }
-};
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
 
 // Login User
 const loginUser = async (req, res) => {
