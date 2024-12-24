@@ -1,3 +1,4 @@
+const BranchModel = require("../models/Branch.model");
 const CarModel = require("../models/Car.model");
 const { uploadToSirv } = require("../utils/sirvUploader");
 
@@ -54,6 +55,76 @@ const { uploadToSirv } = require("../utils/sirvUploader");
 //     });
 //   }
 // };
+// const createCar = async (req, res) => {
+//   try {
+//     // Check if the user is an admin
+//     if (req.body.role !== "admin") {
+//       return res.status(403).json({
+//         success: false,
+//         message: "You are not authorized to create a car",
+//       });
+//     }
+
+//     // Extract data from the request body
+//     const {
+//       unitNumber,
+//       plate,
+//       brand,
+//       model,
+//       color,
+//       year,
+//       insuranceUpload,
+//       insuranceCompany,
+//       branch,
+//       vehicleCardUpload,
+//     } = req.body;
+
+//     // Validate required fields
+//     if (
+//       !unitNumber ||
+//       !plate ||
+//       !brand ||
+//       !model ||
+//       !color ||
+//       !year ||
+//       !insuranceCompany ||
+//       !branch
+//     ) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "All required fields must be provided",
+//       });
+//     }
+
+//     // Create the car record in the database
+//     const newCar = await CarModel.create({
+//       unitNumber,
+//       plate,
+//       brand,
+//       model,
+//       color,
+//       year,
+//       insuranceUpload,
+//       insuranceCompany,
+//       branch,
+//       vehicleCardUpload,
+//     });
+
+//     // Respond with success
+//     res.status(201).json({
+//       success: true,
+//       message: "Car created successfully",
+//       data: newCar,
+//     });
+//   } catch (error) {
+//     // Handle errors
+//     res.status(400).json({
+//       success: false,
+//       message: "Failed to create car",
+//       error: error.message,
+//     });
+//   }
+// };
 const createCar = async (req, res) => {
   try {
     // Check if the user is an admin
@@ -74,7 +145,7 @@ const createCar = async (req, res) => {
       year,
       insuranceUpload,
       insuranceCompany,
-      branch,
+      branchCode, // Receive branchCode instead of branch ID
       vehicleCardUpload,
     } = req.body;
 
@@ -86,14 +157,21 @@ const createCar = async (req, res) => {
       !model ||
       !color ||
       !year ||
-      !insuranceUpload ||
       !insuranceCompany ||
-      !branch ||
-      !vehicleCardUpload
+      !branchCode // Ensure branchCode is provided
     ) {
       return res.status(400).json({
         success: false,
         message: "All required fields must be provided",
+      });
+    }
+
+    // Find the branch by branchCode
+    const branch = await BranchModel.findOne({ branchCode });
+    if (!branch) {
+      return res.status(404).json({
+        success: false,
+        message: `Branch with code ${branchCode} not found`,
       });
     }
 
@@ -107,7 +185,7 @@ const createCar = async (req, res) => {
       year,
       insuranceUpload,
       insuranceCompany,
-      branch,
+      branch: branch._id, // Save the branch ID
       vehicleCardUpload,
     });
 
@@ -119,7 +197,7 @@ const createCar = async (req, res) => {
     });
   } catch (error) {
     // Handle errors
-    res.status(400).json({
+    res.status(500).json({
       success: false,
       message: "Failed to create car",
       error: error.message,
