@@ -14,7 +14,14 @@ const {
 const registerUser = async (req, res) => {
   try {
     const { firstname, lastname, username, password, phone, role } = req.body;
-
+    const { userid } = req.body;
+    const userobjid = new mongoose.Types.ObjectId(userid);
+    const user = await UserModel.findById(userobjid);
+    if (!user || user.role !== "admin") {
+      return res
+        .status(403)
+        .json({ message: "Only admins can register user." });
+    }
     // Check if the username already exists
     const existingUsername = await UserModel.findOne({ username });
     if (existingUsername) {

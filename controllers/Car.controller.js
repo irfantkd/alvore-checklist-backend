@@ -1,6 +1,8 @@
+const { default: mongoose } = require("mongoose");
 const BranchModel = require("../models/Branch.model");
 const CarModel = require("../models/Car.model");
 const { uploadToSirv } = require("../utils/sirvUploader");
+const UserModel = require("../models/User.model");
 
 // Create a new car
 // const createCar = async (req, res) => {
@@ -127,6 +129,13 @@ const { uploadToSirv } = require("../utils/sirvUploader");
 // };
 const createCar = async (req, res) => {
   try {
+    const { userid } = req.body;
+    const userobjid = new mongoose.Types.ObjectId(userid);
+    const user = await UserModel.findById(userobjid);
+    if (!user || user.role !== "admin") {
+      return res.status(403).json({ message: "Only admins can create units." });
+    }
+
     // Check if the user is an admin
     if (req.body.role !== "admin") {
       return res.status(403).json({

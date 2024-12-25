@@ -16,7 +16,12 @@ const { upload } = require("../utils/sirvUploader");
 const router = express.Router();
 
 // Public routes
-router.post("/register", upload.single("profileimage"), registerUser);
+router.post(
+  "/register",
+  upload.single("profileimage"),
+  AuthCheck,
+  registerUser
+);
 router.post("/login", loginUser);
 
 // Protected routes

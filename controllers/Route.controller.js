@@ -1,10 +1,17 @@
 const RouteModel = require("../models/Route.model");
 const UserModel = require("../models/User.model");
 const BranchModel = require("../models/Branch.model");
+const { default: mongoose } = require("mongoose");
 
 // Create a new route
 const createRoute = async (req, res) => {
   try {
+    const { userid } = req.body;
+    const userobjid = new mongoose.Types.ObjectId(userid);
+    const userlogin = await UserModel.findById(userobjid);
+    if (!userlogin || userlogin.role !== "admin") {
+      return res.status(403).json({ message: "Only admins can create units." });
+    }
     if (req.body.role !== "admin") {
       return res.status(403).json({
         success: false,

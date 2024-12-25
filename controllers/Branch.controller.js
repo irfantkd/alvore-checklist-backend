@@ -1,8 +1,18 @@
+const { default: mongoose } = require("mongoose");
 const BranchModel = require("../models/Branch.model");
+const UserModel = require("../models/User.model");
 
 // Create a new branch
 const createBranch = async (req, res) => {
   try {
+    const { userid } = req.body;
+    const userobjid = new mongoose.Types.ObjectId(userid);
+    const user = await UserModel.findById(userobjid);
+    if (!user || user.role !== "admin") {
+      return res
+        .status(403)
+        .json({ message: "Only admins can create branch." });
+    }
     if (req.body.role !== "admin") {
       return res.status(403).json({
         success: false,
