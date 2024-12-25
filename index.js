@@ -13,6 +13,8 @@ const UserRoutes = require("./routes/User.routes");
 const CarRoutes = require("./routes/Car.routes");
 const BranchRoutes = require("./routes/Branch.routes");
 const RouteRoutes = require("./routes/Route.routes");
+const DriverResponseRoutes = require("./routes/DriverResponse.routes");
+const ChecklistRoutes = require("./routes/Checklist.routes");
 
 // Middlewares
 app.use(express.json()); // For parsing JSON requests
@@ -42,6 +44,8 @@ app.use("/auth", UserRoutes);
 app.use("/car", CarRoutes);
 app.use("/branch", BranchRoutes);
 app.use("/route", RouteRoutes);
+app.use("/driver", DriverResponseRoutes);
+app.use("/checklist", ChecklistRoutes);
 
 // Connect to MongoDB
 mongoose
