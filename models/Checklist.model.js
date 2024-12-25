@@ -14,8 +14,20 @@ const checklistSchema = new mongoose.Schema({
       },
       answerType: {
         type: String,
-        enum: ["text", "dropdown", "image", "number", "date", "signature"],
+        enum: [
+          "text",
+          "dropdown",
+          "image",
+          "number",
+          "date",
+          "signature",
+          "takepicture",
+          "uploadimageslect",
+        ],
         required: true,
+      },
+      instruction: {
+        type: String,
       },
       choices: [
         {
