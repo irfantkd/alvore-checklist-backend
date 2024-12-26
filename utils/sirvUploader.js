@@ -28,13 +28,55 @@ const getSirvToken = async () => {
   } catch (error) {
     console.error(
       "Error fetching Sirv token:",
+      error.response?.data.message || error.message
+    );
+    throw error;
+  }
+};
+
+const uploadToSirv = async (originalName) => {
+  try {
+    const token = await getSirvToken(); // Retrieve the token
+    console.log("Original name:", originalName);
+
+    // Ensure the fileBuffer is a valid buffer
+    if (!Buffer.isBuffer(fileBuffer)) {
+      throw new Error("Provided file is not a valid buffer.");
+    }
+
+    console.log("File data received successfully. Size:", fileBuffer.length);
+
+    // Make the POST request to upload the binary data to Sirv
+    const response = await axios.post(
+      `https://api.sirv.com/v2/files/upload?filename=${originalName}`,
+      fileBuffer, // Send the raw binary data here
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/octet-stream", // Binary encoding for raw file data
+        },
+      }
+    );
+
+    console.log("Upload response:", response.data);
+
+    if (response.status === 200) {
+      console.log("File uploaded successfully.");
+
+      return `https://${SIRV_BUCKET_NAME}.sirv.com/${originalName}`;
+    } else {
+      throw new Error(`Upload failed: ${response.data}`);
+    }
+  } catch (error) {
+    console.error(
+      "Error uploading to Sirv:",
       error.response?.data || error.message
     );
     throw error;
   }
 };
 
-const uploadToSirv = async (fileBuffer, originalName) => {
+const uploadMultiToSrv = async (fileBuffer, originalName) => {
   try {
     const token = await getSirvToken(); // Retrieve the token
     console.log("Original name:", originalName);
@@ -76,6 +118,7 @@ const uploadToSirv = async (fileBuffer, originalName) => {
   }
 };
 
+
 const upload = multer({
   storage: multer.memoryStorage(), // Store files in memory as buffers
   limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB limit
@@ -89,4 +132,4 @@ const upload = multer({
 });
 
 // Export functions for reuse
-module.exports = { uploadToSirv, upload };
+module.exports = { uploadToSirv, upload, getSirvToken };
