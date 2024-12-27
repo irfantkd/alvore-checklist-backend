@@ -159,30 +159,30 @@ const createCar = async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (
-      !unitNumber ||
-      !plate ||
-      !brand ||
-      !model ||
-      !color ||
-      !year ||
-      !insuranceCompany ||
-      !branchCode // Ensure branchCode is provided
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "All required fields must be provided",
-      });
-    }
+    // if (
+    //   !unitNumber ||
+    //   !plate ||
+    //   !brand ||
+    //   !model ||
+    //   !color ||
+    //   !year ||
+    //   !insuranceCompany ||
+    //   !branchCode // Ensure branchCode is provided
+    // ) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "All required fields must be provided",
+    //   });
+    // }
 
     // Find the branch by branchCode
-    const branch = await BranchModel.findOne({ branchCode });
-    if (!branch) {
-      return res.status(404).json({
-        success: false,
-        message: `Branch with code ${branchCode} not found`,
-      });
-    }
+    // const branch = await BranchModel.findOne({ branchCode });
+    // if (!branch) {
+    //   return res.status(404).json({
+    //     success: false,
+    //     message: `Branch with code ${branchCode} not found`,
+    //   });
+    // }
 
     // Create the car record in the database
     const newCar = await CarModel.create({

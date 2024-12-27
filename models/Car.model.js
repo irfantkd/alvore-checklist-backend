@@ -4,33 +4,33 @@ const carSchema = new mongoose.Schema(
   {
     unitNumber: {
       type: String,
-      required: [true, "Unit Number is required"],
-      trim: true,
+      // required: [true, "Unit Number is required"],
+      // trim: true,
     },
     plate: {
       type: String,
-      required: [true, "Plate Number is required"],
-      unique: true,
-      trim: true,
+      // required: [true, "Plate Number is required"],
+      // unique: true,
+      // trim: true,
     },
     brand: {
       type: String,
-      required: [true, "Brand is required"],
-      trim: true,
+      // required: [true, "Brand is required"],
+      // trim: true,
     },
     model: {
       type: String,
-      required: [true, "Model is required"],
-      trim: true,
+      // required: [true, "Model is required"],
+      // trim: true,
     },
     color: {
       type: String,
-      required: [true, "Color is required"],
-      trim: true,
+      // required: [true, "Color is required"],
+      // trim: true,
     },
     year: {
       type: Number,
-      required: [true, "Year is required"],
+      // required: [true, "Year is required"],
       validate: {
         validator: function (v) {
           const currentYear = new Date().getFullYear();
@@ -41,21 +41,21 @@ const carSchema = new mongoose.Schema(
     },
     insuranceUpload: {
       type: String,
-      // required: [true, "Insurance upload is required"],
+      required: [true, "Insurance upload is required"],
     },
     insuranceCompany: {
       type: String,
-      required: [true, "Insurance Company is required"],
-      trim: true,
+      // required: [true, "Insurance Company is required"],
+      // trim: true,
     },
     branch: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Branch",
-      required: true,
+      // required: true,
     },
     vehicleCardUpload: {
       type: String,
-      // required: [true, "Vehicle Card upload is required"],
+      required: [true, "Vehicle Card upload is required"],
     },
   },
   {

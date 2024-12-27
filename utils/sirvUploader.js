@@ -76,9 +76,33 @@ const uploadToSirv = async (fileBuffer, originalName) => {
   }
 };
 
+// const upload = multer({
+//   storage: multer.memoryStorage(), // Store files in memory as buffers
+//   limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB limit
+//   fileFilter: (req, file, cb) => {
+//     if (file.mimetype.startsWith("image/")) {
+//       cb(null, true); // Accept only image files
+//     } else {
+//       cb(new Error("Only image files are allowed!"), false); // Reject non-image files
+//     }
+//   },
+// });
+
+// const upload = multer({
+//   storage: multer.memoryStorage(), // Store files in memory as buffers
+//   limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB limit
+//   fileFilter: (req, file, cb) => {
+//     if (file.mimetype.startsWith("image/")) {
+//       cb(null, true); // Accept only image files
+//     } else {
+//       cb(new Error("Only image files are allowed!"), false); // Reject non-image files
+//     }
+//   },
+// });
+
 const upload = multer({
   storage: multer.memoryStorage(), // Store files in memory as buffers
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB limit
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB limit per file
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith("image/")) {
       cb(null, true); // Accept only image files

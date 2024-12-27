@@ -18,7 +18,7 @@ const checklistSchema = new mongoose.Schema({
           "text",
           "dropdown",
           "image",
-          "number",
+          "mcqs",
           "date",
           "signature",
           "takepicture",
