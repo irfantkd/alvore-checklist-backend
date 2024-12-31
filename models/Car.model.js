@@ -22,7 +22,7 @@ const carSchema = new mongoose.Schema(
     category: {
       type: String,
       required: [true, "Category is required"], // Ensure category is provided
-      enum: ["Delivery Units", " Sales Units", "Supervision Units"], // Define allowed categories
+      enum: ["Delivery Units", "Sales Units", "Supervision Units"], // Define allowed categories
     },
     color: {
       type: String,
