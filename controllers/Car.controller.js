@@ -110,14 +110,29 @@ const path = require("path");
 // };
 const createCar = async (req, res) => {
   try {
-    console.log(req);
-
     const { userid } = req.body;
     const userobjid = new mongoose.Types.ObjectId(userid);
     const user = await UserModel.findById(userobjid);
     if (!user || user.role !== "admin") {
       return res.status(403).json({ message: "Only admins can create units." });
     }
+
+    // const uploadedFiles = [];
+    // for (const key in req.files) {
+    //   const singleFile = req.files[key][0];
+    //   const filePath = singleFile.path; // Path to the uploaded file
+
+    //   // Read the file from disk as a Buffer
+    //   const fileBuffer = fs.readFileSync(filePath);
+    //   const originalName = path.basename(filePath); // Extract the filename
+
+    //   // Call upload function to Sirv
+    //   const url = await uploadMultiToSrv(fileBuffer, originalName);
+    //   uploadedFiles.push({ field: key, url });
+    //   console.log(url);
+    // }
+
+    // console.log(uploadedFiles);
 
     const uploadedFiles = [];
     for (const key in req.files) {
@@ -135,7 +150,18 @@ const createCar = async (req, res) => {
     }
 
     console.log(uploadedFiles);
-    // return;
+
+    // Retrieve URL based on field name
+    const vehicleCardUrl = uploadedFiles.find(
+      (file) => file.field === "vehicleCardUpload"
+    )?.url;
+    const insuranceUrl = uploadedFiles.find(
+      (file) => file.field === "insuranceUpload"
+    )?.url;
+
+    // console.log("Vehicle Card URL:", vehicleCardUrl);
+    // console.log("Insurance URL:", insuranceUrl);
+
     const {
       unitNumber,
       plate,
@@ -146,8 +172,6 @@ const createCar = async (req, res) => {
       insuranceCompany,
       branchCode,
       category,
-      insuranceUpload,
-      vehicleCardUpload,
     } = req.body;
 
     if (
@@ -159,6 +183,8 @@ const createCar = async (req, res) => {
       !year ||
       !insuranceCompany ||
       !branchCode ||
+      !vehicleCardUrl ||
+      !insuranceUrl ||
       !category
     ) {
       return res.status(400).json({
@@ -185,8 +211,8 @@ const createCar = async (req, res) => {
       insuranceCompany,
       branch: branch._id,
       category,
-      insuranceUpload,
-      vehicleCardUpload,
+      insuranceUpload: insuranceUrl,
+      vehicleCardUpload: vehicleCardUrl,
     });
 
     res.status(201).json({
