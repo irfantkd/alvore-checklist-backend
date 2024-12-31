@@ -301,39 +301,57 @@ const getUserById = async (req, res) => {
 // Edit Profile (User cannot update the role)
 const editProfile = async (req, res) => {
   try {
-    const { userid, firstname, lastname, phone, role } = req.body;
-    // Ensure the role is not included in the update
-    if (role !== "admin") {
+    const { userid, role } = req.body;
+
+    // Validate role to prevent unauthorized updates to certain fields
+    if (role && role !== "admin") {
       return res.status(403).json({
         message: "You are not allowed to update the role field.",
       });
     }
-    const objid = new mongoose.Types.ObjectId(userid);
-    const fileBuffer = req.file.buffer; // The image file is now stored as a buffer
-    const originalName = req.file.originalname; // Original file name
-    const fileUrl = await uploadToSirv(fileBuffer, originalName);
-    console.log("Uploaded file URL:", fileUrl);
-    // Find the user and update their profile
-    const updatedUser = await UserModel.findByIdAndUpdate(
-      objid,
-      { firstname, lastname, phone, profileimage: fileUrl },
-      { new: true, runValidators: true }
-    );
 
-    if (!updatedUser) {
-      return res.status(404).json({ message: "User not found" });
+    // Validate `userid` presence and format
+    if (!userid || !mongoose.Types.ObjectId.isValid(userid)) {
+      return res.status(400).json({
+        message: "Invalid or missing user ID.",
+      });
     }
 
+    // Convert `userid` to ObjectId
+    const objid = new mongoose.Types.ObjectId(userid);
+
+    // Perform update
+    const updatedUser = await UserModel.findByIdAndUpdate(objid, req.body, {
+      new: true,
+      runValidators: true, // Ensure validations are run during the update
+    });
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Success response
     res.status(200).json({
-      message: "Profile updated successfully",
+      message: "Profile updated successfully.",
       user: updatedUser,
     });
   } catch (error) {
+    // Handle Mongoose validation errors
+    if (error.name === "ValidationError") {
+      const validationErrors = Object.values(error.errors).map(
+        (err) => err.message
+      );
+      return res.status(400).json({
+        message: "Validation Error.",
+        errors: validationErrors,
+      });
+    }
+
+    // Handle other errors
     console.error("Error updating profile:", error.message);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error." });
   }
 };
-
 // Update User Role (Admin Only)
 const updateUserRole = async (req, res) => {
   try {
