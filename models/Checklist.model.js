@@ -6,6 +6,15 @@ const checklistSchema = new mongoose.Schema({
     type: String,
     required: true, // Title of the checklist (e.g., "Car Condition Feedback")
   },
+  category: {
+    type: String,
+    required: true, // Specify the category (e.g., "Unit Category")
+  },
+  branch: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Branch", // References the Branch model
+    required: true, // Checklist must belong to a branch
+  },
   questions: [
     {
       label: {
@@ -38,6 +47,11 @@ const checklistSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
       },
+      icon: {
+        type: String,
+        enum: ["ok", "not_ok", "warning"], // Restrict icon types
+        required: true,
+      },
     },
   ],
   createdBy: {
@@ -50,8 +64,6 @@ const checklistSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
-
-// Driver Response Schema
 
 const ChecklistModel = mongoose.model("Checklist", checklistSchema);
 

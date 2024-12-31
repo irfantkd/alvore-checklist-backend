@@ -15,22 +15,23 @@ const driverResponseSchema = new mongoose.Schema({
     {
       questionId: {
         type: mongoose.Schema.Types.ObjectId,
-        required: true, // Links the answer to a specific question
+        required: true, // Links the answer to a specific question in the checklist
       },
       answer: {
-        type: mongoose.Schema.Types.Mixed, // Can be text, image URL, etc.
+        type: mongoose.Schema.Types.Mixed, // Accepts multiple data types (e.g., text, image URL, dropdown selection)
+        required: true,
       },
       uploadedImage: {
-        type: String, // URL of the uploaded image (if applicable)
+        type: String, // URL of the uploaded image, if applicable
       },
       comment: {
-        type: String, // Additional remarks or comments
+        type: String, // Additional remarks or comments, optional
       },
     },
   ],
   createdAt: {
     type: Date,
-    default: Date.now,
+    default: Date.now, // Automatically sets the creation date
   },
 });
 

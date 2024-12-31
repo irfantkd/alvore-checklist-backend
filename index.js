@@ -8,113 +8,76 @@ const cors = require("cors");
 require("dotenv").config();
 const crypto = require("crypto");
 const fs = require("fs");
-const { getSirvToken } = require("./utils/sirvUploader");
+const {
+  getSirvToken,
+  upload,
+  uploadToSirv,
+  uploadMultiToSrv,
+} = require("./utils/sirvUploader");
 const axios = require("axios");
 
-
-const multer = require('multer');
-const path = require('path');
-const streamifier = require('streamifier');
-const FormData = require('form-data');
-
-
-// Multer Instance
-// Configure Multer Storage
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, './uploads/'); // Folder to save the images
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  },
-});
-
-const upload = multer({
-  storage: storage,
-  fileFilter: (req, file, cb) => {
-    // Check file type
-    const filetypes = /jpeg|jpg|png|gif/;
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = filetypes.test(file.mimetype);
-
-    if (extname && mimetype) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only images are allowed!'));
-    }
-  },
-});
+const multer = require("multer");
+const path = require("path");
+// const streamifier = require("streamifier");
+const FormData = require("form-data");
 
 // Handle Multiple Fields
 const uploadFields = upload.fields([
-  { name: 'profilePicture', maxCount: 1 },
-  { name: 'coverPhoto', maxCount: 1 }
-])
+  { name: "profilePicture", maxCount: 1 },
+  { name: "coverPhoto", maxCount: 1 },
+]);
 
-app.post("/uploadmulti", uploadFields, async (req, res) => {
-  try {
-    const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRJZCI6IlhVTkJCT3RoVDBEZGJ6NEdXUWY1eG9wZGNhdCIsImNsaWVudE5hbWUiOiJBbHZvcmUiLCJzY29wZSI6WyJhY2NvdW50OnJlYWQiLCJhY2NvdW50OndyaXRlIiwidXNlcjpyZWFkIiwidXNlcjp3cml0ZSIsImJpbGxpbmc6cmVhZCIsImJpbGxpbmc6d3JpdGUiLCJmaWxlczpyZWFkIiwiZmlsZXM6d3JpdGUiLCJmaWxlczpjcmVhdGUiLCJmaWxlczp1cGxvYWQ6bXVsdGlwYXJ0IiwiZmlsZXM6c2hhcmVkQmlsbGluZyIsInZpZGVvcyIsImltYWdlcyJdLCJpYXQiOjE3MzUyMDE5NjcsImV4cCI6MTczNTIwMzE2NywiYXVkIjoiZ2JybnEyaGFkNXJqcnJ3cmF4YmZqODdqdWhxd2pqc3gifQ.8FuTQMlkdgP3L3EgFWJu2RRrt0SoRQV3r1x_CEVyRNI"; //await getSirvToken();
-    // console.log("token", token);
-    // return;
-    //  console.log(req.files); // Logs the uploaded file information
+// app.post("/uploadmulti", uploadFields, async (req, res) => {
+//   try {
+//     for (const key in req.files) {
+//       const singleFile = req.files[key][0];
+//       const filePath = singleFile.path;
 
-    // if (!req.files || req.files.length === 0) {
-    //   return res.status(400).json({ message: "No files uploaded" });
-    // }
-    // Access uploaded files
-    // console.log("Profile Picture:", req.files.profilePicture);
-    // console.log("Cover Photo:", req.files.coverPhoto);
+//       // Create FormData and append the buffer stream as the file
+//       const formData = new FormData();
+//       formData.append("file", filePath, {
+//         filename: singleFile.filename,
+//         contentType: singleFile.mimetype,
+//       });
 
-    const responses = [];
-    // const uploadedFiles = [req.files.profilePicture, req.files.coverPhoto];
-    // console.log(uploadedFiles);
+//       console.log(formData);
 
-    // Loop through uploaded files
-    for (const key in req.files) {
-      const singleFile = req.files[key][0];
-      const filePath = singleFile.path;
+//       const url = await uploadMultiToSrv(formData);
+//       console.log(url);
+//     }
 
-      // Convert the file to a stream using streamifier
-      const fileStream = fs.createReadStream(filePath);
-      const bufferStream = streamifier.createReadStream(fileStream);
+//     res.json({ message: "File uploaded successfully", file: req.file });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: error.message });
+//   }
+// });
+// app.post("/uploadmulti", uploadFields, async (req, res) => {
+//   try {
+//     const uploadedFiles = [];
+//     for (const key in req.files) {
+//       const singleFile = req.files[key][0];
+//       const filePath = singleFile.path; // Path to the uploaded file
 
-      // Create FormData and append the buffer stream as the file
-      const formData = new FormData();
-      formData.append('file', bufferStream, { filename: singleFile.filename, contentType: singleFile.mimetype });
+//       // Read the file from disk as a Buffer
+//       const fileBuffer = fs.readFileSync(filePath);
+//       const originalName = path.basename(filePath); // Extract the filename
 
-      // Send the file to Sirv
-      const response = await axios.post(
-        'https://api.sirv.com/v2/files/upload',
-        formData,
-        {
-          headers: {
-            ...formData.getHeaders(),
-            Authorization: `Bearer ${token}`,
-          },
-          params: {
-            filename: `/uploads/${singleFile.filename}`, // Sirv file path
-          },
-        }
-      );
+//       // Call upload function to Sirv
+//       const url = await uploadMultiToSrv(fileBuffer, originalName);
+//       uploadedFiles.push({ field: key, url });
+//       console.log(url);
+//     }
 
-      responses.push(response.data);
-    }
-
-    console.log(responses);
-
-
-    res.json({ message: "File uploaded successfully", file: req.file });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-
-
-
-
-
+//     res.json({
+//       message: "Files uploaded successfully",
+//       files: uploadedFiles,
+//     });
+//   } catch (error) {
+//     console.error("Upload Error:", error.message);
+//     res.status(500).json({ error: error.message });
+//   }
+// });
 
 // Import routes
 const UserRoutes = require("./routes/User.routes");
@@ -143,9 +106,9 @@ app.use(
 );
 
 // Define a test route
-app.get("/", (req, res) => {
-  res.send("Welcome to the API");
-});
+// app.get("/", (req, res) => {
+//   res.send("Welcome to the API");
+// });
 
 // Use routes
 app.use("/auth", UserRoutes);

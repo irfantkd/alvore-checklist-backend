@@ -4,33 +4,32 @@ const carSchema = new mongoose.Schema(
   {
     unitNumber: {
       type: String,
-      required: [true, "Unit Number is required"],
       trim: true,
     },
     plate: {
       type: String,
-      required: [true, "Plate Number is required"],
       unique: true,
       trim: true,
     },
     brand: {
       type: String,
-      required: [true, "Brand is required"],
       trim: true,
     },
     model: {
       type: String,
-      required: [true, "Model is required"],
       trim: true,
+    },
+    category: {
+      type: String,
+      required: [true, "Category is required"], // Ensure category is provided
+      enum: ["Delivery Units", " Sales Units", "Supervision Units"], // Define allowed categories
     },
     color: {
       type: String,
-      required: [true, "Color is required"],
       trim: true,
     },
     year: {
       type: Number,
-      required: [true, "Year is required"],
       validate: {
         validator: function (v) {
           const currentYear = new Date().getFullYear();
@@ -41,21 +40,17 @@ const carSchema = new mongoose.Schema(
     },
     insuranceUpload: {
       type: String,
-      // required: [true, "Insurance upload is required"],
     },
     insuranceCompany: {
       type: String,
-      required: [true, "Insurance Company is required"],
       trim: true,
     },
     branch: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Branch",
-      required: true,
     },
     vehicleCardUpload: {
       type: String,
-      // required: [true, "Vehicle Card upload is required"],
     },
   },
   {
@@ -63,6 +58,6 @@ const carSchema = new mongoose.Schema(
   }
 );
 
-const carModele = mongoose.model("Car", carSchema);
+const CarModel = mongoose.model("Car", carSchema);
 
-module.exports = carModele;
+module.exports = CarModel;
