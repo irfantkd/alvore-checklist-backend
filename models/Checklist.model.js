@@ -1,10 +1,10 @@
+// Updated Checklist Schema
 const mongoose = require("mongoose");
 
-// Checklist Schema
 const checklistSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: true, // Title of the checklist (e.g., "Car Condition Feedback")
+    required: true,
   },
   categories: [
     {
@@ -23,7 +23,7 @@ const checklistSchema = new mongoose.Schema({
     {
       label: {
         type: String,
-        required: true, // The question text
+        required: true,
       },
       answerType: {
         type: String,
@@ -45,21 +45,25 @@ const checklistSchema = new mongoose.Schema({
       choices: [
         {
           text: {
-            type: String, // Text of the option
+            type: String,
             required: true,
           },
           icon: {
             type: String,
-            enum: ["ok", "not_ok", "warning"], // Icon for the option
+            enum: ["ok", "not_ok", "warning"],
             required: true,
           },
         },
       ],
+      isRequired: {
+        type: Boolean,
+        default: false,
+      },
     },
   ],
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User", // References the User model (Admin)
+    ref: "User",
     required: true,
   },
   createdAt: {
@@ -69,5 +73,4 @@ const checklistSchema = new mongoose.Schema({
 });
 
 const ChecklistModel = mongoose.model("Checklist", checklistSchema);
-
 module.exports = ChecklistModel;
