@@ -6,7 +6,18 @@ const BranchModel = require("../models/Branch.model"); // Ensure Branch model is
 // Create a new checklist
 const createChecklist = async (req, res) => {
   try {
-    const { title, questions, userid, branch, category } = req.body;
+    const { title, questions, userid, branches, categories } = req.body;
+
+    if (!Array.isArray(branches) || branches.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "Branches must be a non-empty array." });
+    }
+    if (!Array.isArray(categories) || categories.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "Categories must be a non-empty array." });
+    }
 
     const userobjid = new mongoose.Types.ObjectId(userid);
 
@@ -18,20 +29,24 @@ const createChecklist = async (req, res) => {
         .json({ message: "Only admins can create checklists." });
     }
 
-    // Verify branch exists
-    const branchExists = await BranchModel.findOne({ branchCode: branch });
+    // Verify all branches exist
+    const branchObjects = await BranchModel.find({
+      branchCode: { $in: branches },
+    });
 
-    if (!branchExists) {
-      return res.status(404).json({ message: "Branch not found." });
+    if (branchObjects.length !== branches.length) {
+      return res
+        .status(404)
+        .json({ message: "One or more branches not found." });
     }
-    const branchobjid = new mongoose.Types.ObjectId(branchExists?._id);
 
+    // Create the checklist
     const checklist = new Checklist({
       title,
       questions,
       createdBy: userid,
-      branch: branchobjid,
-      category,
+      branches: branchObjects.map((b) => b._id), // Save branch IDs as references
+      categories, // Save categories as an array
     });
 
     await checklist.save();
@@ -51,7 +66,7 @@ const getAllChecklists = async (req, res) => {
   try {
     const checklists = await Checklist.find()
       .populate("createdBy", "firstname lastname role")
-      .populate("branch", "branchCode") // Assuming Branch model has a 'name' field
+      .populate("branches", "branchCode") // Populate multiple branches
       .exec();
 
     res.status(200).json(checklists);
