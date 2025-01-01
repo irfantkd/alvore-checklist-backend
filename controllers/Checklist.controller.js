@@ -7,20 +7,6 @@ const BranchModel = require("../models/Branch.model");
 const createChecklist = async (req, res) => {
   try {
     const { title, questions, userid, branches, categories } = req.body;
-<<<<<<< HEAD
-=======
-
-    if (!Array.isArray(branches) || branches.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "Branches must be a non-empty array." });
-    }
-    if (!Array.isArray(categories) || categories.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "Categories must be a non-empty array." });
-    }
->>>>>>> cb976675921f70b35c0045f0729c904fea9cb9ca
 
     const userobjid = new mongoose.Types.ObjectId(userid);
 
@@ -37,34 +23,22 @@ const createChecklist = async (req, res) => {
       branchCode: { $in: branches },
     });
 
-<<<<<<< HEAD
     if (branchObjects.length !== branches?.length) {
-=======
-    if (branchObjects.length !== branches.length) {
->>>>>>> cb976675921f70b35c0045f0729c904fea9cb9ca
       return res
         .status(404)
         .json({ message: "One or more branches not found." });
     }
-<<<<<<< HEAD
 
     const branchIds = branchObjects.map((branch) => branch._id);
     // const categories = category.map((category) => category);
-=======
->>>>>>> cb976675921f70b35c0045f0729c904fea9cb9ca
 
     // Create the checklist
     const checklist = new Checklist({
       title,
       questions,
       createdBy: userid,
-<<<<<<< HEAD
       branches: branchIds,
       categories,
-=======
-      branches: branchObjects.map((b) => b._id), // Save branch IDs as references
-      categories, // Save categories as an array
->>>>>>> cb976675921f70b35c0045f0729c904fea9cb9ca
     });
 
     await checklist.save();
@@ -86,11 +60,7 @@ const getAllChecklists = async (req, res) => {
     const checklists = await Checklist.find()
       .sort({ createdAt: -1 }) // Sort by creation date in descending order
       .populate("createdBy", "firstname lastname role")
-<<<<<<< HEAD
       .populate("branches", "branchCode")
-=======
-      .populate("branches", "branchCode") // Populate multiple branches
->>>>>>> cb976675921f70b35c0045f0729c904fea9cb9ca
       .exec();
 
     res.status(200).json(checklists);
