@@ -1,6 +1,6 @@
 const UserModel = require("../models/User.model.js");
 const fs = require("fs");
-const { uploadToSirv } = require("../utils/sirvUploader.js");
+const { uploadToSirv, uploadMultiToSrv } = require("../utils/sirvUploader.js");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { default: mongoose } = require("mongoose");
@@ -46,6 +46,32 @@ const registerUser = async (req, res) => {
     // Hash the password using bcrypt
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // upload images
+    const uploadedFiles = [];
+    for (const key in req.files) {
+      const singleFile = req.files[key][0];
+      const filePath = singleFile.path; // Path to the uploaded file
+
+      // Read the file from disk as a Buffer
+      const fileBuffer = fs.readFileSync(filePath);
+      const originalName = path.basename(filePath); // Extract the filename
+
+      // Call upload function to Sirv
+      const url = await uploadMultiToSrv(fileBuffer, originalName);
+      uploadedFiles.push({ field: key, url });
+      console.log(url);
+    }
+
+    console.log(uploadedFiles);
+
+    // Retrieve URL based on field name
+    const profileimageUrl = uploadedFiles.find(
+      (file) => file.field === "profileimage"
+    )?.url;
+    const licenseimageUrl = uploadedFiles.find(
+      (file) => file.field === "licenseimage"
+    )?.url;
+
     // Create a new user object
     const newUser = new UserModel({
       firstname,
@@ -56,6 +82,8 @@ const registerUser = async (req, res) => {
       role,
       licensenumber,
       licenseExpirationDate,
+      licenseimage: licenseimageUrl,
+      profileimage: profileimageUrl,
     });
 
     // Save the user to the database
@@ -174,7 +202,7 @@ const getUserById = async (req, res) => {
 // Edit Profile (User cannot update the role)
 const editProfile = async (req, res) => {
   try {
-    const { userid, role } = req.body;
+    const { userid, role, phone, licenseimage, profileimage } = req.body;
 
     // Validate role to prevent unauthorized updates to certain fields
     if (role && role !== "admin") {
@@ -192,12 +220,58 @@ const editProfile = async (req, res) => {
 
     // Convert `userid` to ObjectId
     const objid = new mongoose.Types.ObjectId(userid);
+    const existingPhone = await UserModel.findOne({ phone });
+    if (existingPhone) {
+      return res.status(400).json({ message: "Phone number already exists" });
+    }
 
+    // upload images
+    const uploadedFiles = [];
+    for (const key in req.files) {
+      const singleFile = req.files[key][0];
+      const filePath = singleFile.path; // Path to the uploaded file
+
+      // Read the file from disk as a Buffer
+      const fileBuffer = fs.readFileSync(filePath);
+      const originalName = path.basename(filePath); // Extract the filename
+
+      // Call upload function to Sirv
+      const url = await uploadMultiToSrv(fileBuffer, originalName);
+      uploadedFiles.push({ field: key, url });
+      console.log(url);
+    }
+
+    console.log(uploadedFiles);
+
+    // Retrieve URL based on field name
+    const profileimageUrl = uploadedFiles.find(
+      (file) => file.field === "profileimage"
+    )?.url;
+    const licenseimageUrl = uploadedFiles.find(
+      (file) => file.field === "licenseimage"
+    )?.ur;
     // Perform update
-    const updatedUser = await UserModel.findByIdAndUpdate(objid, req.body, {
-      new: true,
-      runValidators: true, // Ensure validations are run during the update
-    });
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      objid,
+      req.body,
+      {
+        // firstname,
+        // lastname,
+        // username,
+        // password: hashedPassword,
+        // phone,
+        // role,
+        // licensenumber,
+        // licenseExpirationDate,
+        licenseimage: licenseimageUrl,
+        profileimage: profileimageUrl,
+        phone,
+      },
+      {
+        new: true,
+        runValidators: true, // Ensure validations are run during the update
+      }
+    );
 
     if (!updatedUser) {
       return res.status(404).json({ message: "User not found." });

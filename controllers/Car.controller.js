@@ -117,6 +117,51 @@ const createCar = async (req, res) => {
       return res.status(403).json({ message: "Only admins can create units." });
     }
 
+    // const uploadedFiles = [];
+    // for (const key in req.files) {
+    //   const singleFile = req.files[key][0];
+    //   const filePath = singleFile.path; // Path to the uploaded file
+
+    //   // Read the file from disk as a Buffer
+    //   const fileBuffer = fs.readFileSync(filePath);
+    //   const originalName = path.basename(filePath); // Extract the filename
+
+    //   // Call upload function to Sirv
+    //   const url = await uploadMultiToSrv(fileBuffer, originalName);
+    //   uploadedFiles.push({ field: key, url });
+    //   console.log(url);
+    // }
+
+    // console.log(uploadedFiles);
+
+    const uploadedFiles = [];
+    for (const key in req.files) {
+      const singleFile = req.files[key][0];
+      const filePath = singleFile.path; // Path to the uploaded file
+
+      // Read the file from disk as a Buffer
+      const fileBuffer = fs.readFileSync(filePath);
+      const originalName = path.basename(filePath); // Extract the filename
+
+      // Call upload function to Sirv
+      const url = await uploadMultiToSrv(fileBuffer, originalName);
+      uploadedFiles.push({ field: key, url });
+      console.log(url);
+    }
+
+    console.log(uploadedFiles);
+
+    // Retrieve URL based on field name
+    const vehicleCardUrl = uploadedFiles.find(
+      (file) => file.field === "vehicleCardUpload"
+    )?.url;
+    const insuranceUrl = uploadedFiles.find(
+      (file) => file.field === "insuranceUpload"
+    )?.url;
+
+    // console.log("Vehicle Card URL:", vehicleCardUrl);
+    // console.log("Insurance URL:", insuranceUrl);
+
     const {
       unitNumber,
       plate,
@@ -127,8 +172,6 @@ const createCar = async (req, res) => {
       insuranceCompany,
       branchCode,
       category,
-      insuranceUpload,
-      vehicleCardUpload,
     } = req.body;
 
     if (
@@ -140,6 +183,8 @@ const createCar = async (req, res) => {
       !year ||
       !insuranceCompany ||
       !branchCode ||
+      !vehicleCardUrl ||
+      !insuranceUrl ||
       !category
     ) {
       return res.status(400).json({
@@ -166,8 +211,8 @@ const createCar = async (req, res) => {
       insuranceCompany,
       branch: branch._id,
       category,
-      insuranceUpload,
-      vehicleCardUpload,
+      insuranceUpload: insuranceUrl,
+      vehicleCardUpload: vehicleCardUrl,
     });
 
     res.status(201).json({
@@ -187,7 +232,10 @@ const createCar = async (req, res) => {
 // Get all cars
 const getAllCars = async (req, res) => {
   try {
-    const cars = await CarModel.find();
+    const cars = await CarModel.find()
+      .populate("branch", "branchCode") // Populate branch field with branchCode
+      .exec();
+
     res.status(200).json({
       success: true,
       data: cars,
@@ -204,7 +252,9 @@ const getAllCars = async (req, res) => {
 // Get a single car by ID
 const getCarById = async (req, res) => {
   try {
-    const car = await CarModel.findById(req.params.id);
+    const car = await CarModel.findById(req.params.id)
+      .populate("branch", "branchCode") // Populate branch field with branchCode
+      .exec();
     if (!car) {
       return res.status(404).json({
         success: false,

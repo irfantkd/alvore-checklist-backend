@@ -52,32 +52,32 @@ const uploadFields = upload.fields([
 //     res.status(500).json({ error: error.message });
 //   }
 // });
-// app.post("/uploadmulti", uploadFields, async (req, res) => {
-//   try {
-//     const uploadedFiles = [];
-//     for (const key in req.files) {
-//       const singleFile = req.files[key][0];
-//       const filePath = singleFile.path; // Path to the uploaded file
+app.post("/uploadmulti", uploadFields, async (req, res) => {
+  try {
+    const uploadedFiles = [];
+    for (const key in req.files) {
+      const singleFile = req.files[key][0];
+      const filePath = singleFile.path; // Path to the uploaded file
 
-//       // Read the file from disk as a Buffer
-//       const fileBuffer = fs.readFileSync(filePath);
-//       const originalName = path.basename(filePath); // Extract the filename
+      // Read the file from disk as a Buffer
+      const fileBuffer = fs.readFileSync(filePath);
+      const originalName = path.basename(filePath); // Extract the filename
 
-//       // Call upload function to Sirv
-//       const url = await uploadMultiToSrv(fileBuffer, originalName);
-//       uploadedFiles.push({ field: key, url });
-//       console.log(url);
-//     }
+      // Call upload function to Sirv
+      const url = await uploadMultiToSrv(fileBuffer, originalName);
+      uploadedFiles.push({ field: key, url });
+      console.log(url);
+    }
 
-//     res.json({
-//       message: "Files uploaded successfully",
-//       files: uploadedFiles,
-//     });
-//   } catch (error) {
-//     console.error("Upload Error:", error.message);
-//     res.status(500).json({ error: error.message });
-//   }
-// });
+    res.json({
+      message: "Files uploaded successfully",
+      files: uploadedFiles,
+    });
+  } catch (error) {
+    console.error("Upload Error:", error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Import routes
 const UserRoutes = require("./routes/User.routes");
