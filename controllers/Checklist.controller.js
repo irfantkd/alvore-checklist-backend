@@ -20,6 +20,7 @@ const createChecklist = async (req, res) => {
 
     // Verify branch exists
     const branchExists = await BranchModel.findOne({ branchCode: branch });
+
     if (!branchExists) {
       return res.status(404).json({ message: "Branch not found." });
     }
@@ -32,7 +33,6 @@ const createChecklist = async (req, res) => {
       branch: branchobjid,
       category,
     });
-    console.log(checklist);
 
     await checklist.save();
 
@@ -51,7 +51,7 @@ const getAllChecklists = async (req, res) => {
   try {
     const checklists = await Checklist.find()
       .populate("createdBy", "firstname lastname role")
-      .populate("branch", "name") // Assuming Branch model has a 'name' field
+      .populate("branch", "branchCode") // Assuming Branch model has a 'name' field
       .exec();
 
     res.status(200).json(checklists);

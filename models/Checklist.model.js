@@ -6,15 +6,19 @@ const checklistSchema = new mongoose.Schema({
     type: String,
     required: true, // Title of the checklist (e.g., "Car Condition Feedback")
   },
-  category: {
-    type: String,
-    required: true, // Specify the category (e.g., "Unit Category")
-  },
-  branch: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Branch", // References the Branch model
-    required: true, // Checklist must belong to a branch
-  },
+  categories: [
+    {
+      type: String, // Store multiple categories as strings
+      required: true,
+    },
+  ],
+  branches: [
+    {
+      type: mongoose.Schema.Types.ObjectId, // Reference multiple branches
+      ref: "Branch",
+      required: true,
+    },
+  ],
   questions: [
     {
       label: {
@@ -40,18 +44,17 @@ const checklistSchema = new mongoose.Schema({
       },
       choices: [
         {
-          type: String, // Dropdown or multiple-choice options
+          text: {
+            type: String, // Text of the option
+            required: true,
+          },
+          icon: {
+            type: String,
+            enum: ["ok", "not_ok", "warning"], // Icon for the option
+            required: true,
+          },
         },
       ],
-      isRequired: {
-        type: Boolean,
-        default: false,
-      },
-      icon: {
-        type: String,
-        enum: ["ok", "not_ok", "warning"], // Restrict icon types
-        required: true,
-      },
     },
   ],
   createdBy: {

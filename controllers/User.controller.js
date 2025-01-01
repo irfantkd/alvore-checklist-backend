@@ -9,6 +9,7 @@ const { sendSMSUnimatrix } = require("../services/unimatrix.service.js");
 const {
   verifyOTPUnimatrix,
 } = require("../services/unimatrix.varify.service.js");
+const path = require("path");
 
 // Register User
 const registerUser = async (req, res) => {
@@ -22,15 +23,17 @@ const registerUser = async (req, res) => {
       role,
       licenseExpirationDate,
       licensenumber,
+      userid,
     } = req.body;
-    const { userid } = req.body;
+
     const userobjid = new mongoose.Types.ObjectId(userid);
     const user = await UserModel.findById(userobjid);
-    if (!user || user.role !== "admin") {
-      return res
-        .status(403)
-        .json({ message: "Only admins can register user." });
-    }
+
+    // if (!user || user.role !== "admin") {
+    //   return res
+    //     .status(403)
+    //     .json({ message: "Only admins can register user." });
+    // }
     // Check if the username already exists
     const existingUsername = await UserModel.findOne({ username });
     if (existingUsername) {
@@ -59,10 +62,7 @@ const registerUser = async (req, res) => {
       // Call upload function to Sirv
       const url = await uploadMultiToSrv(fileBuffer, originalName);
       uploadedFiles.push({ field: key, url });
-      console.log(url);
     }
-
-    console.log(uploadedFiles);
 
     // Retrieve URL based on field name
     const profileimageUrl = uploadedFiles.find(
