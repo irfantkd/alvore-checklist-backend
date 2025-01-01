@@ -38,7 +38,10 @@ const createBranch = async (req, res) => {
 // Get all branches
 const getAllBranches = async (req, res) => {
   try {
-    const branches = await BranchModel.find();
+    const branches = await BranchModel.find()
+      .sort({ createdAt: -1 }) // Sort by creation date in descending order
+      .exec();
+
     res.status(200).json({
       success: true,
       data: branches,
@@ -55,13 +58,17 @@ const getAllBranches = async (req, res) => {
 // Get a single branch by ID
 const getBranchById = async (req, res) => {
   try {
-    const branch = await BranchModel.findById(req.params.id);
+    const branch = await BranchModel.findById(req.params.id)
+      .sort({ createdAt: -1 }) // Sort by creation date in descending order
+      .exec();
+
     if (!branch) {
       return res.status(404).json({
         success: false,
         message: "Branch not found",
       });
     }
+
     res.status(200).json({
       success: true,
       data: branch,

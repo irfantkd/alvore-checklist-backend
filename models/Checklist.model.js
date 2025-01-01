@@ -1,16 +1,29 @@
+// Updated Checklist Schema
 const mongoose = require("mongoose");
 
-// Checklist Schema
 const checklistSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: true, // Title of the checklist (e.g., "Car Condition Feedback")
+    required: true,
   },
+  categories: [
+    {
+      type: String, // Store multiple categories as strings
+      required: true,
+    },
+  ],
+  branches: [
+    {
+      type: mongoose.Schema.Types.ObjectId, // Reference multiple branches
+      ref: "Branch",
+      required: true,
+    },
+  ],
   questions: [
     {
       label: {
         type: String,
-        required: true, // The question text
+        required: true,
       },
       answerType: {
         type: String,
@@ -31,7 +44,15 @@ const checklistSchema = new mongoose.Schema({
       },
       choices: [
         {
-          type: String, // Dropdown or multiple-choice options
+          text: {
+            type: String,
+            required: true,
+          },
+          icon: {
+            type: String,
+            enum: ["ok", "not_ok", "warning"],
+            required: true,
+          },
         },
       ],
       isRequired: {
@@ -42,7 +63,7 @@ const checklistSchema = new mongoose.Schema({
   ],
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User", // References the User model (Admin)
+    ref: "User",
     required: true,
   },
   createdAt: {
@@ -51,8 +72,5 @@ const checklistSchema = new mongoose.Schema({
   },
 });
 
-// Driver Response Schema
-
 const ChecklistModel = mongoose.model("Checklist", checklistSchema);
-
 module.exports = ChecklistModel;

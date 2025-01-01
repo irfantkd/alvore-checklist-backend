@@ -1,6 +1,6 @@
 const UserModel = require("../models/User.model.js");
 const fs = require("fs");
-const { uploadToSirv } = require("../utils/sirvUploader.js");
+const { uploadToSirv, uploadMultiToSrv } = require("../utils/sirvUploader.js");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { default: mongoose } = require("mongoose");
@@ -9,19 +9,31 @@ const { sendSMSUnimatrix } = require("../services/unimatrix.service.js");
 const {
   verifyOTPUnimatrix,
 } = require("../services/unimatrix.varify.service.js");
+const path = require("path");
 
 // Register User
 const registerUser = async (req, res) => {
   try {
-    const { firstname, lastname, username, password, phone, role } = req.body;
-    const { userid } = req.body;
+    const {
+      firstname,
+      lastname,
+      username,
+      password,
+      phone,
+      role,
+      licenseExpirationDate,
+      licensenumber,
+      userid,
+    } = req.body;
+
     const userobjid = new mongoose.Types.ObjectId(userid);
     const user = await UserModel.findById(userobjid);
-    if (!user || user.role !== "admin") {
-      return res
-        .status(403)
-        .json({ message: "Only admins can register user." });
-    }
+
+    // if (!user || user.role !== "admin") {
+    //   return res
+    //     .status(403)
+    //     .json({ message: "Only admins can register user." });
+    // }
     // Check if the username already exists
     const existingUsername = await UserModel.findOne({ username });
     if (existingUsername) {
@@ -37,6 +49,29 @@ const registerUser = async (req, res) => {
     // Hash the password using bcrypt
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // upload images
+    const uploadedFiles = [];
+    for (const key in req.files) {
+      const singleFile = req.files[key][0];
+      const filePath = singleFile.path; // Path to the uploaded file
+
+      // Read the file from disk as a Buffer
+      const fileBuffer = fs.readFileSync(filePath);
+      const originalName = path.basename(filePath); // Extract the filename
+
+      // Call upload function to Sirv
+      const url = await uploadMultiToSrv(fileBuffer, originalName);
+      uploadedFiles.push({ field: key, url });
+    }
+
+    // Retrieve URL based on field name
+    const profileimageUrl = uploadedFiles.find(
+      (file) => file.field === "profileimage"
+    )?.url;
+    const licenseimageUrl = uploadedFiles.find(
+      (file) => file.field === "licenseimage"
+    )?.url;
+
     // Create a new user object
     const newUser = new UserModel({
       firstname,
@@ -45,6 +80,10 @@ const registerUser = async (req, res) => {
       password: hashedPassword,
       phone,
       role,
+      licensenumber,
+      licenseExpirationDate,
+      licenseimage: licenseimageUrl,
+      profileimage: profileimageUrl,
     });
 
     // Save the user to the database
@@ -76,144 +115,6 @@ const registerUser = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
-// const registerUser = async (req, res) => {
-//   try {
-//     const { firstname, lastname, username, password, phone, role } = req.body;
-//     const filePath = path.join(__dirname, "uploads", req.file.filename);
-//     const fileUrl = await uploadToSirv(filePath, req.file.originalname);
-//     fs.unlinkSync(filePath);
-//     const file = req.file; // Profile image file
-//     console.log("file console", req.file);
-//     // Check if username already exists
-//     const existingUsername = await UserModel.findOne({ username });
-//     if (existingUsername) {
-//       return res.status(400).json({ message: "Username already exists" });
-//     }
-
-//     // Check if phone number already exists
-//     const existingPhone = await UserModel.findOne({ phone });
-//     if (existingPhone) {
-//       return res.status(400).json({ message: "Phone number already exists" });
-//     }
-
-//     // Hash the password
-//     const hashedPassword = await bcrypt.hash(password, 10);
-
-//     // Handle profile image upload
-//     let profileImageUrl = "";
-//     if (file) {
-//       const filePath = path.resolve(file.path);
-//       profileImageUrl = await uploadToSirv(filePath, file.originalname);
-//       fs.unlinkSync(filePath); // Remove temporary file after upload
-//     }
-
-//     // Create a new user object
-//     const newUser = new UserModel({
-//       firstname,
-//       lastname,
-//       username,
-//       password: hashedPassword,
-//       phone,
-//       role,
-//       profileimage: profileImageUrl,
-//     });
-
-//     // Save the user to the database
-//     await newUser.save();
-
-//     // Generate a JWT token
-//     const token = jwt.sign(
-//       { userid: newUser._id, username: newUser.username },
-//       process.env.JWT_SECRET || "secretKey",
-//       { expiresIn: "1h" }
-//     );
-
-//     res.status(201).json({
-//       message: "User registered successfully",
-//       user: newUser,
-//       token,
-//     });
-//   } catch (error) {
-//     console.error("Error registering user:", error.message);
-
-//     // Handle unique constraint errors from Mongoose
-//     if (error.code === 11000) {
-//       const duplicateKey = Object.keys(error.keyValue)[0];
-//       return res
-//         .status(400)
-//         .json({ message: `${duplicateKey} already exists` });
-//     }
-
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
-
-// const registerUser = async (req, res) => {
-//   try {
-//     const { firstname, lastname, username, password, phone, role } = req.body;
-
-//     // Check if username already exists
-//     const existingUsername = await UserModel.findOne({ username });
-//     if (existingUsername) {
-//       return res.status(400).json({ message: "Username already exists" });
-//     }
-
-//     // Check if phone number already exists
-//     const existingPhone = await UserModel.findOne({ phone });
-//     if (existingPhone) {
-//       return res.status(400).json({ message: "Phone number already exists" });
-//     }
-
-//     // Hash the password
-//     const hashedPassword = await bcrypt.hash(password, 10);
-
-//     // Handle profile image upload
-//     const fileBuffer = req.file.buffer; // The image file is now stored as a buffer
-//     const originalName = req.file.originalname; // Original file name
-//     const fileUrl = await uploadToSirv(fileBuffer, originalName);
-//     console.log("Uploaded file URL:", fileUrl);
-
-//     // Create a new user object
-//     const newUser = new UserModel({
-//       firstname,
-//       lastname,
-//       username,
-//       password: hashedPassword,
-//       phone,
-//       role,
-//       profileimage: fileUrl,
-//     });
-
-//     // Save the user to the database
-//     await newUser.save();
-
-//     // Generate a JWT token
-//     const token = jwt.sign(
-//       { userid: newUser._id, username: newUser.username },
-//       process.env.JWT_SECRET || "secretKey",
-//       { expiresIn: "1h" }
-//     );
-
-//     res.status(201).json({
-//       message: "User registered successfully",
-//       user: newUser,
-//       token,
-//     });
-//   } catch (error) {
-//     console.error("Error registering user:", error.message);
-
-//     // Handle unique constraint errors from Mongoose
-//     if (error.code === 11000) {
-//       const duplicateKey = Object.keys(error.keyValue)[0];
-//       return res
-//         .status(400)
-//         .json({ message: `${duplicateKey} already exists` });
-//     }
-
-//     res.status(500).json({ message: "Server error" });
-//   }
-// };
 
 // Login User
 const loginUser = async (req, res) => {
@@ -271,8 +172,10 @@ const getAllUsers = async (req, res) => {
       return res.status(403).json({ message: "Access denied. Admins only." });
     }
 
-    // Retrieve all users
-    const users = await UserModel.find({}, "-password"); // Exclude the password field
+    // Retrieve all users and sort by createdAt in descending order
+    const users = await UserModel.find({}, "-password") // Exclude the password field
+      .sort({ createdAt: -1 }); // Sort users by createdAt in descending order
+
     res.status(200).json({ users });
   } catch (error) {
     console.error("Error fetching users:", error.message);
@@ -301,39 +204,103 @@ const getUserById = async (req, res) => {
 // Edit Profile (User cannot update the role)
 const editProfile = async (req, res) => {
   try {
-    const { userid, firstname, lastname, phone, role } = req.body;
-    // Ensure the role is not included in the update
-    if (role !== "admin") {
+    const { userid, role, phone, licenseimage, profileimage } = req.body;
+
+    // Validate role to prevent unauthorized updates to certain fields
+    if (role && role !== "admin") {
       return res.status(403).json({
         message: "You are not allowed to update the role field.",
       });
     }
+
+    // Validate `userid` presence and format
+    if (!userid || !mongoose.Types.ObjectId.isValid(userid)) {
+      return res.status(400).json({
+        message: "Invalid or missing user ID.",
+      });
+    }
+
+    // Convert `userid` to ObjectId
     const objid = new mongoose.Types.ObjectId(userid);
-    const fileBuffer = req.file.buffer; // The image file is now stored as a buffer
-    const originalName = req.file.originalname; // Original file name
-    const fileUrl = await uploadToSirv(fileBuffer, originalName);
-    console.log("Uploaded file URL:", fileUrl);
-    // Find the user and update their profile
+    const existingPhone = await UserModel.findOne({ phone });
+    if (existingPhone) {
+      return res.status(400).json({ message: "Phone number already exists" });
+    }
+
+    // upload images
+    const uploadedFiles = [];
+    for (const key in req.files) {
+      const singleFile = req.files[key][0];
+      const filePath = singleFile.path; // Path to the uploaded file
+
+      // Read the file from disk as a Buffer
+      const fileBuffer = fs.readFileSync(filePath);
+      const originalName = path.basename(filePath); // Extract the filename
+
+      // Call upload function to Sirv
+      const url = await uploadMultiToSrv(fileBuffer, originalName);
+      uploadedFiles.push({ field: key, url });
+      console.log(url);
+    }
+
+    console.log(uploadedFiles);
+
+    // Retrieve URL based on field name
+    const profileimageUrl = uploadedFiles.find(
+      (file) => file.field === "profileimage"
+    )?.url;
+    const licenseimageUrl = uploadedFiles.find(
+      (file) => file.field === "licenseimage"
+    )?.ur;
+    // Perform update
     const updatedUser = await UserModel.findByIdAndUpdate(
       objid,
-      { firstname, lastname, phone, profileimage: fileUrl },
-      { new: true, runValidators: true }
+      req.body,
+      {
+        // firstname,
+        // lastname,
+        // username,
+        // password: hashedPassword,
+        // phone,
+        // role,
+        // licensenumber,
+        // licenseExpirationDate,
+        licenseimage: licenseimageUrl,
+        profileimage: profileimageUrl,
+        phone,
+      },
+      {
+        new: true,
+        runValidators: true, // Ensure validations are run during the update
+      }
     );
 
     if (!updatedUser) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: "User not found." });
     }
 
+    // Success response
     res.status(200).json({
-      message: "Profile updated successfully",
+      message: "Profile updated successfully.",
       user: updatedUser,
     });
   } catch (error) {
+    // Handle Mongoose validation errors
+    if (error.name === "ValidationError") {
+      const validationErrors = Object.values(error.errors).map(
+        (err) => err.message
+      );
+      return res.status(400).json({
+        message: "Validation Error.",
+        errors: validationErrors,
+      });
+    }
+
+    // Handle other errors
     console.error("Error updating profile:", error.message);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: "Server error." });
   }
 };
-
 // Update User Role (Admin Only)
 const updateUserRole = async (req, res) => {
   try {

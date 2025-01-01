@@ -1,12 +1,15 @@
-const { default: mongoose } = require("mongoose");
-const Checklist = require("../models/Checklist.model"); // Adjust the path as needed
-const UserModel = require("../models/User.model"); // Import the User model
+const mongoose = require("mongoose");
+const Checklist = require("../models/Checklist.model");
+const UserModel = require("../models/User.model");
+const BranchModel = require("../models/Branch.model");
 
 // Create a new checklist
 const createChecklist = async (req, res) => {
   try {
-    const { title, questions, userid } = req.body;
+    const { title, questions, userid, branches, categories } = req.body;
+
     const userobjid = new mongoose.Types.ObjectId(userid);
+
     // Verify the user is an admin
     const user = await UserModel.findById(userobjid);
     if (!user || user.role !== "admin") {
@@ -15,11 +18,29 @@ const createChecklist = async (req, res) => {
         .json({ message: "Only admins can create checklists." });
     }
 
+    // Verify all branches exist
+    const branchObjects = await BranchModel.find({
+      branchCode: { $in: branches },
+    });
+
+    if (branchObjects.length !== branches?.length) {
+      return res
+        .status(404)
+        .json({ message: "One or more branches not found." });
+    }
+
+    const branchIds = branchObjects.map((branch) => branch._id);
+    // const categories = category.map((category) => category);
+
+    // Create the checklist
     const checklist = new Checklist({
       title,
       questions,
       createdBy: userid,
+      branches: branchIds,
+      categories,
     });
+
     await checklist.save();
 
     res
@@ -33,10 +54,40 @@ const createChecklist = async (req, res) => {
 };
 
 // Get all checklists
+// Get all checklists
 const getAllChecklists = async (req, res) => {
   try {
     const checklists = await Checklist.find()
+      .sort({ createdAt: -1 }) // Sort by creation date in descending order
       .populate("createdBy", "firstname lastname role")
+      .populate("branches", "branchCode")
+      .exec();
+
+    res.status(200).json(checklists);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching checklists", error: error.message });
+  }
+};
+
+// Get checklists by branch and category
+const getChecklistsByBranchAndCategory = async (req, res) => {
+  try {
+    const { branches, categories } = req.query;
+
+    const branchFilter = branches ? { branches: { $in: branches } } : {};
+    const categoryFilter = categories
+      ? { categories: { $in: categories } }
+      : {};
+
+    const checklists = await Checklist.find({
+      ...branchFilter,
+      ...categoryFilter,
+    })
+      .sort({ createdAt: -1 }) // Sort by creation date in descending order
+      .populate("createdBy", "firstname lastname role")
+      .populate("branches", "branchCode")
       .exec();
 
     res.status(200).json(checklists);
@@ -51,10 +102,10 @@ const getAllChecklists = async (req, res) => {
 const getChecklistById = async (req, res) => {
   try {
     const { id } = req.params;
-    const objid = new mongoose.Types.ObjectId(id);
 
-    const checklist = await Checklist.findById(objid)
+    const checklist = await Checklist.findById(id)
       .populate("createdBy", "firstname lastname role")
+      .populate("branches", "branchCode")
       .exec();
 
     if (!checklist) {
@@ -68,52 +119,55 @@ const getChecklistById = async (req, res) => {
       .json({ message: "Error fetching checklist", error: error.message });
   }
 };
-// Get ChecklistForDriver
-const getChecklistForDriver = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { userid } = req.body;
-    const userobjid = new mongoose.Types.ObjectId(userid);
-    // Verify that the driver exists
-    const driver = await UserModel.findById(userobjid);
-    if (!driver || driver.role !== "driver") {
-      return res
-        .status(403)
-        .json({ message: "Only drivers can view checklists." });
-    }
-
-    // Fetch the checklist
-    const checklist = await Checklist.findById(id);
-
-    if (!checklist) {
-      return res.status(404).json({ message: "Checklist not found." });
-    }
-
-    res.status(200).json({ checklist });
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching checklist", error });
-  }
-};
 
 // Update a checklist
 const updateChecklist = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, questions } = req.body;
+    const { title, questions, branches, categories } = req.body;
 
-    const checklist = await Checklist.findByIdAndUpdate(
-      id,
-      { title, questions },
-      { new: true, runValidators: true }
-    );
+    // Check if all branches exist
+    if (branches) {
+      const branchObjects = await BranchModel.find({
+        branchCode: { $in: branches },
+      });
 
-    if (!checklist) {
-      return res.status(404).json({ message: "Checklist not found" });
+      if (branchObjects.length !== branches.length) {
+        return res
+          .status(404)
+          .json({ message: "One or more branches not found." });
+      }
+
+      const branchIds = branchObjects.map((branch) => branch._id);
+
+      const checklist = await Checklist.findByIdAndUpdate(
+        id,
+        { title, questions, branches: branchIds, categories },
+        { new: true, runValidators: true }
+      );
+
+      if (!checklist) {
+        return res.status(404).json({ message: "Checklist not found" });
+      }
+
+      res
+        .status(200)
+        .json({ message: "Checklist updated successfully", checklist });
+    } else {
+      const checklist = await Checklist.findByIdAndUpdate(
+        id,
+        { title, questions, categories },
+        { new: true, runValidators: true }
+      );
+
+      if (!checklist) {
+        return res.status(404).json({ message: "Checklist not found" });
+      }
+
+      res
+        .status(200)
+        .json({ message: "Checklist updated successfully", checklist });
     }
-
-    res
-      .status(200)
-      .json({ message: "Checklist updated successfully", checklist });
   } catch (error) {
     res
       .status(500)
@@ -142,8 +196,8 @@ const deleteChecklist = async (req, res) => {
 module.exports = {
   createChecklist,
   getAllChecklists,
+  getChecklistsByBranchAndCategory,
   getChecklistById,
   updateChecklist,
   deleteChecklist,
-  getChecklistForDriver,
 };

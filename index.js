@@ -10,6 +10,77 @@ const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
 require("dotenv").config();
+const fs = require("fs");
+const {
+  getSirvToken,
+  upload,
+  uploadToSirv,
+  uploadMultiToSrv,
+} = require("./utils/sirvUploader");
+const axios = require("axios");
+
+const multer = require("multer");
+const path = require("path");
+// const streamifier = require("streamifier");
+const FormData = require("form-data");
+
+// Handle Multiple Fields
+const uploadFields = upload.fields([
+  { name: "profilePicture", maxCount: 1 },
+  { name: "coverPhoto", maxCount: 1 },
+]);
+
+// app.post("/uploadmulti", uploadFields, async (req, res) => {
+//   try {
+//     for (const key in req.files) {
+//       const singleFile = req.files[key][0];
+//       const filePath = singleFile.path;
+
+//       // Create FormData and append the buffer stream as the file
+//       const formData = new FormData();
+//       formData.append("file", filePath, {
+//         filename: singleFile.filename,
+//         contentType: singleFile.mimetype,
+//       });
+
+//       console.log(formData);
+
+//       const url = await uploadMultiToSrv(formData);
+//       console.log(url);
+//     }
+
+//     res.json({ message: "File uploaded successfully", file: req.file });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: error.message });
+//   }
+// });
+app.post("/uploadmulti", uploadFields, async (req, res) => {
+  try {
+    const uploadedFiles = [];
+    for (const key in req.files) {
+      const singleFile = req.files[key][0];
+      const filePath = singleFile.path; // Path to the uploaded file
+
+      // Read the file from disk as a Buffer
+      const fileBuffer = fs.readFileSync(filePath);
+      const originalName = path.basename(filePath); // Extract the filename
+
+      // Call upload function to Sirv
+      const url = await uploadMultiToSrv(fileBuffer, originalName);
+      uploadedFiles.push({ field: key, url });
+      console.log(url);
+    }
+
+    res.json({
+      message: "Files uploaded successfully",
+      files: uploadedFiles,
+    });
+  } catch (error) {
+    console.error("Upload Error:", error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Import routes
 const UserRoutes = require("./routes/User.routes");
@@ -57,10 +128,10 @@ app.use(
   })
 );
 
-// Test Route
-app.get("/", (req, res) => {
-  res.send("Welcome to the API");
-});
+// Define a test route
+// app.get("/", (req, res) => {
+//   res.send("Welcome to the API");
+// });
 
 // Routes
 app.use("/auth", UserRoutes);
