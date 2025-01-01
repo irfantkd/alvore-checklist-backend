@@ -13,7 +13,16 @@ const {
 // Register User
 const registerUser = async (req, res) => {
   try {
-    const { firstname, lastname, username, password, phone, role } = req.body;
+    const {
+      firstname,
+      lastname,
+      username,
+      password,
+      phone,
+      role,
+      licenseExpirationDate,
+      licensenumber,
+    } = req.body;
     const { userid } = req.body;
     const userobjid = new mongoose.Types.ObjectId(userid);
     const user = await UserModel.findById(userobjid);
@@ -45,6 +54,8 @@ const registerUser = async (req, res) => {
       password: hashedPassword,
       phone,
       role,
+      licensenumber,
+      licenseExpirationDate,
     });
 
     // Save the user to the database
