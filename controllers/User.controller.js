@@ -172,8 +172,10 @@ const getAllUsers = async (req, res) => {
       return res.status(403).json({ message: "Access denied. Admins only." });
     }
 
-    // Retrieve all users
-    const users = await UserModel.find({}, "-password"); // Exclude the password field
+    // Retrieve all users and sort by createdAt in descending order
+    const users = await UserModel.find({}, "-password") // Exclude the password field
+      .sort({ createdAt: -1 }); // Sort users by createdAt in descending order
+
     res.status(200).json({ users });
   } catch (error) {
     console.error("Error fetching users:", error.message);

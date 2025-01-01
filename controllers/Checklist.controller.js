@@ -1,12 +1,12 @@
 const mongoose = require("mongoose");
 const Checklist = require("../models/Checklist.model");
 const UserModel = require("../models/User.model");
-const BranchModel = require("../models/Branch.model"); // Ensure Branch model is imported
+const BranchModel = require("../models/Branch.model");
 
 // Create a new checklist
 const createChecklist = async (req, res) => {
   try {
-    const { title, questions, userid, branch, category } = req.body;
+    const { title, questions, userid, branches, categories } = req.body;
 
     const userobjid = new mongoose.Types.ObjectId(userid);
 
@@ -18,20 +18,26 @@ const createChecklist = async (req, res) => {
         .json({ message: "Only admins can create checklists." });
     }
 
-    // Verify branch exists
-    const branchExists = await BranchModel.findOne({ branchCode: branch });
+    // Verify all branches exist
+    const branchObjects = await BranchModel.find({
+      branchCode: { $in: branches },
+    });
 
-    if (!branchExists) {
-      return res.status(404).json({ message: "Branch not found." });
+    if (branchObjects.length !== branches?.length) {
+      return res
+        .status(404)
+        .json({ message: "One or more branches not found." });
     }
-    const branchobjid = new mongoose.Types.ObjectId(branchExists?._id);
+
+    const branchIds = branchObjects.map((branch) => branch._id);
+    // const categories = category.map((category) => category);
 
     const checklist = new Checklist({
       title,
       questions,
       createdBy: userid,
-      branch: branchobjid,
-      category,
+      branches: branchIds,
+      categories,
     });
 
     await checklist.save();
@@ -47,11 +53,13 @@ const createChecklist = async (req, res) => {
 };
 
 // Get all checklists
+// Get all checklists
 const getAllChecklists = async (req, res) => {
   try {
     const checklists = await Checklist.find()
+      .sort({ createdAt: -1 }) // Sort by creation date in descending order
       .populate("createdBy", "firstname lastname role")
-      .populate("branch", "branchCode") // Assuming Branch model has a 'name' field
+      .populate("branches", "branchCode")
       .exec();
 
     res.status(200).json(checklists);
@@ -65,11 +73,20 @@ const getAllChecklists = async (req, res) => {
 // Get checklists by branch and category
 const getChecklistsByBranchAndCategory = async (req, res) => {
   try {
-    const { branch, category } = req.query;
+    const { branches, categories } = req.query;
 
-    const checklists = await Checklist.find({ branch, category })
+    const branchFilter = branches ? { branches: { $in: branches } } : {};
+    const categoryFilter = categories
+      ? { categories: { $in: categories } }
+      : {};
+
+    const checklists = await Checklist.find({
+      ...branchFilter,
+      ...categoryFilter,
+    })
+      .sort({ createdAt: -1 }) // Sort by creation date in descending order
       .populate("createdBy", "firstname lastname role")
-      .populate("branch", "name")
+      .populate("branches", "branchCode")
       .exec();
 
     res.status(200).json(checklists);
@@ -87,7 +104,7 @@ const getChecklistById = async (req, res) => {
 
     const checklist = await Checklist.findById(id)
       .populate("createdBy", "firstname lastname role")
-      .populate("branch", "name")
+      .populate("branches", "branchCode")
       .exec();
 
     if (!checklist) {
@@ -106,29 +123,50 @@ const getChecklistById = async (req, res) => {
 const updateChecklist = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, questions, branch, category } = req.body;
+    const { title, questions, branches, categories } = req.body;
 
-    // Check if branch exists
-    if (branch) {
-      const branchExists = await BranchModel.findById(branch);
-      if (!branchExists) {
-        return res.status(404).json({ message: "Branch not found." });
+    // Check if all branches exist
+    if (branches) {
+      const branchObjects = await BranchModel.find({
+        branchCode: { $in: branches },
+      });
+
+      if (branchObjects.length !== branches.length) {
+        return res
+          .status(404)
+          .json({ message: "One or more branches not found." });
       }
+
+      const branchIds = branchObjects.map((branch) => branch._id);
+
+      const checklist = await Checklist.findByIdAndUpdate(
+        id,
+        { title, questions, branches: branchIds, categories },
+        { new: true, runValidators: true }
+      );
+
+      if (!checklist) {
+        return res.status(404).json({ message: "Checklist not found" });
+      }
+
+      res
+        .status(200)
+        .json({ message: "Checklist updated successfully", checklist });
+    } else {
+      const checklist = await Checklist.findByIdAndUpdate(
+        id,
+        { title, questions, categories },
+        { new: true, runValidators: true }
+      );
+
+      if (!checklist) {
+        return res.status(404).json({ message: "Checklist not found" });
+      }
+
+      res
+        .status(200)
+        .json({ message: "Checklist updated successfully", checklist });
     }
-
-    const checklist = await Checklist.findByIdAndUpdate(
-      id,
-      { title, questions, branch, category },
-      { new: true, runValidators: true }
-    );
-
-    if (!checklist) {
-      return res.status(404).json({ message: "Checklist not found" });
-    }
-
-    res
-      .status(200)
-      .json({ message: "Checklist updated successfully", checklist });
   } catch (error) {
     res
       .status(500)

@@ -117,23 +117,6 @@ const createCar = async (req, res) => {
       return res.status(403).json({ message: "Only admins can create units." });
     }
 
-    // const uploadedFiles = [];
-    // for (const key in req.files) {
-    //   const singleFile = req.files[key][0];
-    //   const filePath = singleFile.path; // Path to the uploaded file
-
-    //   // Read the file from disk as a Buffer
-    //   const fileBuffer = fs.readFileSync(filePath);
-    //   const originalName = path.basename(filePath); // Extract the filename
-
-    //   // Call upload function to Sirv
-    //   const url = await uploadMultiToSrv(fileBuffer, originalName);
-    //   uploadedFiles.push({ field: key, url });
-    //   console.log(url);
-    // }
-
-    // console.log(uploadedFiles);
-
     const uploadedFiles = [];
     for (const key in req.files) {
       const singleFile = req.files[key][0];
@@ -183,8 +166,6 @@ const createCar = async (req, res) => {
       !year ||
       !insuranceCompany ||
       !branchCode ||
-      !vehicleCardUrl ||
-      !insuranceUrl ||
       !category
     ) {
       return res.status(400).json({
@@ -233,6 +214,7 @@ const createCar = async (req, res) => {
 const getAllCars = async (req, res) => {
   try {
     const cars = await CarModel.find()
+      .sort({ createdAt: -1 }) // Sort by createdAt field in descending order
       .populate("branch", "branchCode") // Populate branch field with branchCode
       .exec();
 

@@ -141,7 +141,8 @@ const getResponsesByChecklist = async (req, res) => {
 
     const responses = await DriverResponse.find({ checklistId: checklistobjId })
       .populate("driverId", "firstname lastname username role")
-      .populate("checklistId", "title category branch");
+      .populate("checklistId", "title category branch")
+      .sort({ createdAt: -1 }); // Sorting by createdAt in descending order (newest first)
 
     if (!responses.length) {
       return res
@@ -162,7 +163,8 @@ const getResponsesByDriver = async (req, res) => {
 
     const responses = await DriverResponse.find({ driverId })
       .populate("checklistId", "title category branch")
-      .populate("driverId", "firstname lastname username role");
+      .populate("driverId", "firstname lastname username role")
+      .sort({ createdAt: -1 }); // Sorting by createdAt in descending order (newest first)
 
     if (!responses.length) {
       return res

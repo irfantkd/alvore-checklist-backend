@@ -59,7 +59,8 @@ const getAllRoutes = async (req, res) => {
   try {
     const routes = await RouteModel.find()
       .populate("branch", "branchCode branchName")
-      .populate("user", "username");
+      .populate("user", "username")
+      .sort({ createdAt: -1 }); // Sort by createdAt in descending order
 
     res.status(200).json({
       success: true,
