@@ -120,7 +120,6 @@ const registerUser = async (req, res) => {
 const loginUser = async (req, res) => {
   try {
     const { username, password } = req.body;
-    console.log(username, password);
 
     // Find the user by username
     const user = await UserModel.findOne({ username }).select("+password");
@@ -164,8 +163,6 @@ const loginUser = async (req, res) => {
 const getAllUsers = async (req, res) => {
   try {
     const { userid, role } = req.body;
-    console.log(userid);
-    console.log(role);
 
     // Check if the authenticated user is an admin
     if (role !== "admin") {

@@ -19,7 +19,7 @@ const uploadFields = upload.fields([
 const router = express.Router();
 
 // Public routes
-router.post("/register", AuthCheck, uploadFields, registerUser);
+router.post("/register", uploadFields, registerUser);
 router.post("/login", loginUser);
 
 // Protected routes

@@ -7,7 +7,6 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const crypto = require("crypto");
 const multer = require("multer");
-const fs = require("fs");
 const path = require("path");
 require("dotenv").config();
 const fs = require("fs");
@@ -19,8 +18,6 @@ const {
 } = require("./utils/sirvUploader");
 const axios = require("axios");
 
-const multer = require("multer");
-const path = require("path");
 // const streamifier = require("streamifier");
 const FormData = require("form-data");
 
@@ -102,12 +99,6 @@ const storage = multer.diskStorage({
     cb(null, file.fieldname + "-" + uniqueSuffix + "-" + file.originalname);
   },
 });
-
-const upload = multer({ storage: storage });
-const multipleUpload = upload.fields([
-  { name: "profileimage", maxCount: 1 }, // Single image field
-  { name: "galleryimages", maxCount: 8 }, // Array of images field
-]);
 
 // Middlewares
 app.use(express.json()); // Parse JSON requests

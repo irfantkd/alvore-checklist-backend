@@ -13,9 +13,7 @@ const createChecklist = async (req, res) => {
     // Verify the user is an admin
     const user = await UserModel.findById(userobjid);
     if (!user || user.role !== "admin") {
-      return res
-        .status(403)
-        .json({ message: "Only admins can create checklists." });
+      return res.status(403).json({ message: "Only admins can create." });
     }
 
     // Verify all branches exist
