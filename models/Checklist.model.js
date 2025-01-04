@@ -50,7 +50,7 @@ const checklistSchema = new mongoose.Schema({
           },
           icon: {
             type: String,
-            enum: ["ok", "not_ok", "warning"],
+            enum: ["ok", "not_ok", "warning", "na"],
             required: true,
           },
         },
