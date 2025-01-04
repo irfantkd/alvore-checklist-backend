@@ -51,6 +51,7 @@ const userSchema = new mongoose.Schema(
       enum: ["driver", "admin"], // Added "driver" role
       default: "driver",
     },
+
     phone: {
       type: String,
       unique: true,
