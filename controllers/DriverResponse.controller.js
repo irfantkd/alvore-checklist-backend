@@ -8,7 +8,7 @@ const UserModel = require("../models/User.model");
 const createDriverResponse = async (req, res) => {
   try {
     const { userid, answers } = req.body; // Extracting data from the request body
-    const checklistId = req.params.id; // Checklist ID from URL params
+    const checklistId = req.params.id; // Chec  klist ID from URL params
 
     // Convert IDs to ObjectId for MongoDB queries
     const checklistObjId = new mongoose.Types.ObjectId(checklistId);
@@ -45,7 +45,6 @@ const createDriverResponse = async (req, res) => {
     );
 
     // Prepare an array for image URLs
-    let uploadedImageUrls = [];
 
     // Validate each answer
     for (const answer of answers) {
@@ -124,7 +123,8 @@ const createDriverResponse = async (req, res) => {
 
         if (
           question.answerType === "signature" ||
-          question.answerType === "image"
+          question.answerType === "image" ||
+          question.answerType === "uploadimageslect"
         ) {
           // Handle multiple image uploads
           const uploadedFiles = [];
