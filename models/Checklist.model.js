@@ -39,6 +39,11 @@ const checklistSchema = new mongoose.Schema({
         ],
         required: true,
       },
+      uploadedImages: [
+        {
+          type: String, // Array of image URLs
+        },
+      ],
       instruction: {
         type: String,
       },
