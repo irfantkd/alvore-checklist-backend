@@ -283,7 +283,7 @@ const createChecklist = async (req, res) => {
 
     const branchIds = branchObjects.map((branch) => branch._id);
 
-    const checklist = new ChecklistModel({
+    const checklist = new Checklist({
       title,
       questions,
       uploadedImages,
