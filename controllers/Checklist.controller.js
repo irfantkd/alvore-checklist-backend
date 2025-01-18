@@ -2,6 +2,9 @@ const mongoose = require("mongoose");
 const Checklist = require("../models/Checklist.model");
 const UserModel = require("../models/User.model");
 const BranchModel = require("../models/Branch.model");
+const fs = require("fs");
+const path = require("path");
+const { uploadMultiToSrv } = require("../utils/sirvUploader");
 
 // Create a new checklist
 // const createChecklist = async (req, res) => {
@@ -133,12 +136,11 @@ const createChecklist = async (req, res) => {
       }
     }
     console.log("fghjkl", uploadedFiles);
-    return;
 
     // Attach uploaded images to their respective questions
     const formattedQuestions = questions.map((q, index) => ({
       ...q,
-      uploadedImages: uploadedFiles[index] || ["dd"],
+      uploadedImages: uploadedFiles[index],
     }));
 
     const branchIds = branchObjects.map((branch) => branch._id);
