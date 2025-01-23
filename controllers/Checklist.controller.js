@@ -252,9 +252,13 @@ const createChecklist = async (req, res) => {
     // }
 
     // Verify all branches exist
+    console.log("branches", branches);
+
     const branchObjects = await BranchModel.find({
       branchCode: { $in: branches },
     });
+    console.log("branchObjects", branchObjects);
+
     if (branchObjects.length !== branches?.length) {
       return res
         .status(404)
