@@ -52,6 +52,18 @@ const driverResponseSchema = new mongoose.Schema({
     ref: "Checklist",
     required: true,
   },
+  branches: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Branch",
+    },
+  ],
+  units: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Car",
+    },
+  ],
   driverId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",

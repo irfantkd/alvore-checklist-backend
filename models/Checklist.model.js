@@ -1,29 +1,24 @@
-// Updated Checklist Schema
 const mongoose = require("mongoose");
 
 const checklistSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: true,
   },
   categories: [
     {
-      type: String, // Store multiple categories as strings
-      required: true,
+      type: String,
     },
   ],
   branches: [
     {
-      type: mongoose.Schema.Types.ObjectId, // Reference multiple branches
+      type: mongoose.Schema.Types.ObjectId,
       ref: "Branch",
-      required: true,
     },
   ],
   questions: [
     {
       label: {
         type: String,
-        required: true,
       },
       answerType: {
         type: String,
@@ -37,13 +32,7 @@ const checklistSchema = new mongoose.Schema({
           "takepicture",
           "uploadimageslect",
         ],
-        required: true,
       },
-      uploadedImages: [
-        {
-          type: String, // Array of image URLs
-        },
-      ],
       instruction: {
         type: String,
       },
@@ -51,7 +40,6 @@ const checklistSchema = new mongoose.Schema({
         {
           text: {
             type: String,
-            required: true,
           },
           icon: {
             type: String,
@@ -62,14 +50,25 @@ const checklistSchema = new mongoose.Schema({
       ],
       isRequired: {
         type: Boolean,
-        default: false,
       },
+    },
+  ],
+  uploadedImages: [
+    {
+      questionId: {
+        type: Number, // Index or identifier to link with questions
+        required: true,
+      },
+      imageUrls: [
+        {
+          type: String,
+        },
+      ],
     },
   ],
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
-    required: true,
   },
   createdAt: {
     type: Date,
