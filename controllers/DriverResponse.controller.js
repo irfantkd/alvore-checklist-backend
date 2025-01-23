@@ -20,6 +20,7 @@ const createDriverResponse = async (req, res) => {
       return res.status(404).json({ message: "Checklist not found." });
     }
 
+
     // Fetch the user and validate their role
     // const user = await UserModel.findById(userObjId);
     // if (!user || user.role !== "driver") {
@@ -220,6 +221,28 @@ const createDriverResponse = async (req, res) => {
 //     });
 //   }
 // };
+// Get all responses
+const getAllResponses = async (req, res) => {
+  try {
+    const responses = await DriverResponse.find()
+      .populate("driverId", "firstname lastname username role")
+      .populate("checklistId", "title category branch")
+      .sort({ createdAt: -1 }); // Sorting by createdAt in descending order (newest first)
+
+    if (!responses.length) {
+      return res
+        .status(404)
+        .json({ message: "No responses found." });
+    }
+
+    res.status(200).json(responses);
+  } catch (error) {
+    console.error("Error fetching all responses:", error);
+    res.status(500).json({ message: "Error fetching all responses.", error });
+  }
+};
+
+
 const updateDriverResponse = async (req, res) => {
   try {
     const responseId = req.params.responseId;
@@ -317,4 +340,6 @@ module.exports = {
   updateDriverResponse,
   getResponsesByChecklist,
   getResponsesByDriver,
+  getAllResponses,
+
 };

@@ -5,6 +5,8 @@ const {
   getResponsesByChecklist,
   getResponsesByDriver,
   updateDriverResponse,
+  getAllResponses, 
+
 } = require("../controllers/DriverResponse.controller");
 const { upload } = require("../utils/sirvUploader");
 
@@ -16,5 +18,6 @@ router.post("/response/:id", uploadFields, Authcheck, createDriverResponse); // 
 router.get("/checklist/:id", getResponsesByChecklist); // Get all responses for a specific checklist
 router.get("/driver/:driverId", getResponsesByDriver); // Get all responses by a specific driver
 router.put("/response/:responseId", Authcheck, updateDriverResponse); // Update a driver response
+router.get("/responses", getAllResponses); // Get all responses
 
 module.exports = router;
