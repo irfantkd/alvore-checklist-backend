@@ -7,12 +7,14 @@ const UserModel = require("../models/User.model");
 const fs = require("fs");
 const path = require("path");
 const { uploadMultiToSrv } = require("../utils/sirvUploader"); // Assuming you have an upload service
+const RouteModel = require("../models/Route.model");
 
 // Create a new driver response
 
 const createDriverResponse = async (req, res) => {
   try {
-    const { userid, answers, branches, units } = req.body; // Extracting data from the request body
+    const { userid, answers, branches, units, routes } = req.body; // Extracting data from the request body
+
     const checklistId = req.params.id; // Checklist ID from URL params
 
     // Convert IDs to ObjectId for MongoDB queries
@@ -114,7 +116,7 @@ const createDriverResponse = async (req, res) => {
       }
     }
 
-    // Resolve the branches and units based on user input
+    // Resolve the branches and units based routes on user input
     const resolvedBranches = [];
     for (const branchCode of branches) {
       const branch = await BranchModel.findOne({ branchCode: branchCode }); // Assuming Branch has 'code' field
@@ -126,7 +128,17 @@ const createDriverResponse = async (req, res) => {
           .json({ message: `Branch with code ${branchCode} not found.` });
       }
     }
-
+    const resolvedRoutes = [];
+    for (const routeNumber of routes) {
+      const route = await RouteModel.findOne({ routeNumber: routeNumber }); // Assuming Branch has 'code' field
+      if (route) {
+        resolvedRoutes.push(route._id);
+      } else {
+        return res
+          .status(400)
+          .json({ message: `Routes with code ${routeNumber} not found.` });
+      }
+    }
     const resolvedUnits = [];
     for (const unitNumber of units) {
       const unit = await CarModel.findOne({ unitNumber: unitNumber }); // Assuming Car has 'number' field
@@ -145,6 +157,7 @@ const createDriverResponse = async (req, res) => {
       driverId: userObjId,
       branches: resolvedBranches,
       units: resolvedUnits,
+      routes: resolvedRoutes,
       answers,
     });
 
@@ -177,6 +190,10 @@ const getAllResponses = async (req, res) => {
         path: "branches", // Populating branches
         select: "branchCode", // Assuming branchCode is the field on the Branch model
       })
+      .populate({
+        path: "routes", // Populating branches
+        select: "routeNumber", // Assuming branchCode is the field on the Branch model
+      })
       .sort({ createdAt: -1 }); // Sorting by createdAt in descending order (newest first)
 
     if (!responses.length) {
@@ -194,7 +211,7 @@ const getAllResponses = async (req, res) => {
 const updateDriverResponse = async (req, res) => {
   try {
     const responseId = req.params.responseId;
-    const { answers, branches, units } = req.body;
+    const { answers, branches, units, routes } = req.body;
 
     // Find the existing response
     const response = await DriverResponse.findById(responseId).populate(
@@ -255,10 +272,15 @@ const updateDriverResponse = async (req, res) => {
       }
     }
 
-    // Update the branches and units if they are provided
+    // Update the branches and units and routes if they are provided
     if (branches) {
       response.branches = branches.map(
         (branch) => new mongoose.Types.ObjectId(branch)
+      );
+    }
+    if (routes) {
+      response.routes = routes.map(
+        (route) => new mongoose.Types.ObjectId(route)
       );
     }
     if (units) {
@@ -302,6 +324,10 @@ const getResponsesByChecklist = async (req, res) => {
         path: "branches", // Populating branches
         select: "branchCode", // Assuming branchCode is the field on the Branch model
       })
+      .populate({
+        path: "routes", // Populating branches
+        select: "routeNumber", // Assuming branchCode is the field on the Branch model
+      })
       .sort({ createdAt: -1 }); // Sorting by createdAt in descending order (newest first)
 
     if (!responses.length) {
@@ -333,6 +359,10 @@ const getResponsesByDriver = async (req, res) => {
       .populate({
         path: "branches", // Populating branches
         select: "branchCode", // Assuming branchCode is the field on the Branch model
+      })
+      .populate({
+        path: "routes",
+        select: "routeNumber",
       })
       .sort({ createdAt: -1 }); // Sorting by createdAt in descending order (newest first)
 
