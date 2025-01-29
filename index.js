@@ -22,10 +22,10 @@ const axios = require("axios");
 const FormData = require("form-data");
 
 // Handle Multiple Fields
-const uploadFields = upload.fields([
-  { name: "profilePicture", maxCount: 1 },
-  { name: "coverPhoto", maxCount: 1 },
-]);
+// const uploadFields = upload.fields([
+//   { name: "profilePicture", maxCount: 1 },
+//   { name: "coverPhoto", maxCount: 1 },
+// ]);
 
 // app.post("/uploadmulti", uploadFields, async (req, res) => {
 //   try {
@@ -52,21 +52,28 @@ const uploadFields = upload.fields([
 //     res.status(500).json({ error: error.message });
 //   }
 // });
+const uploadFields = upload.fields([
+  { name: "profilePicture", maxCount: 1 },
+  { name: "coverPhoto", maxCount: 1 },
+  { name: "uploadedImages", maxCount: 10 },  // Update this field name to match the model
+  // Add 'images' field for multiple image uploads
+]);
+
+
 app.post("/uploadmulti", uploadFields, async (req, res) => {
   try {
     const uploadedFiles = [];
     for (const key in req.files) {
-      const singleFile = req.files[key][0];
-      const filePath = singleFile.path; // Path to the uploaded file
+      const singleFile = req.files[key][0]; // Get the file from the array
+      const filePath = singleFile.path;    // Path to the uploaded file
 
       // Read the file from disk as a Buffer
       const fileBuffer = fs.readFileSync(filePath);
-      const originalName = path.basename(filePath); // Extract the filename
+      const originalName = path.basename(filePath); // Get the filename
 
-      // Call upload function to Sirv
+      // Call upload function to Sirv (or your storage service)
       const url = await uploadMultiToSrv(fileBuffer, originalName);
       uploadedFiles.push({ field: key, url });
-      console.log(url);
     }
 
     res.json({
@@ -78,6 +85,7 @@ app.post("/uploadmulti", uploadFields, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
 
 // Import routes
 const UserRoutes = require("./routes/User.routes");

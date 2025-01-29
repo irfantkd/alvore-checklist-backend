@@ -14,7 +14,6 @@ const RouteModel = require("../models/Route.model");
 const createDriverResponse = async (req, res) => {
   try {
     const { userid, answers, branches, units, routes } = req.body; // Extracting data from the request body
-
     const checklistId = req.params.id; // Checklist ID from URL params
 
     // Convert IDs to ObjectId for MongoDB queries
@@ -27,27 +26,10 @@ const createDriverResponse = async (req, res) => {
       return res.status(404).json({ message: "Checklist not found." });
     }
 
-    // Fetch the user and validate their role
-    // const user = await UserModel.findById(userObjId);
-    // if (!user || user.role !== "driver") {
-    //   return res.status(403).json({ message: "Only drivers can submit responses." });
-    // }
-
-    // Check for duplicate responses for the same checklist and driver (optional step)
-    // const existingResponse = await DriverResponse.findOne({
-    //   checklistId: checklistObjId,
-    //   driverId: userObjId,
-    // });
-    // if (existingResponse) {
-    //   return res.status(400).json({ message: "You have already submitted this checklist." });
-    // }
-
     // Extract question IDs from the checklist
-    const checklistQuestionIds = checklist.questions.map((q) =>
-      q._id.toString()
-    );
+    const checklistQuestionIds = checklist.questions.map((q) => q._id.toString());
 
-    // Prepare an array for image URLs (if images are uploaded)
+    // Prepare an array for uploaded image URLs
     const uploadedFiles = [];
 
     // Validate and process the answers
@@ -60,25 +42,16 @@ const createDriverResponse = async (req, res) => {
       }
 
       // Process different answer types based on the question type
-      const question = checklist.questions.find(
-        (q) => q._id.toString() === answer.questionId
-      );
+      const question = checklist.questions.find((q) => q._id.toString() === answer.questionId);
       if (question) {
         // Validate dropdown/mcqs
-        if (
-          question.answerType === "dropdown" ||
-          question.answerType === "mcqs"
-        ) {
+        if (["dropdown", "mcqs"].includes(question.answerType)) {
           const validChoices = question.choices.map((choice) => choice.text);
           if (Array.isArray(answer.answer)) {
-            const invalidAnswers = answer.answer.filter(
-              (ans) => !validChoices.includes(ans)
-            );
+            const invalidAnswers = answer.answer.filter((ans) => !validChoices.includes(ans));
             if (invalidAnswers.length > 0) {
               return res.status(400).json({
-                message: `Invalid answers: ${invalidAnswers.join(
-                  ","
-                )} are not valid choices for questionId ${answer.questionId}.`,
+                message: `Invalid answers: ${invalidAnswers.join(",")} are not valid choices for questionId ${answer.questionId}.`,
               });
             }
           } else if (!validChoices.includes(answer.answer)) {
@@ -88,16 +61,13 @@ const createDriverResponse = async (req, res) => {
           }
         }
 
-        // Handle text, date, multi-select, and other answer types similarly...
+        // Handle other answer types like text, date, etc.
       }
 
       // Handle image file uploads if necessary (upload to server and store URLs)
-      if (
-        question.answerType === "image" ||
-        question.answerType === "signature"
-      ) {
-        if (req.files && req.files["images"]) {
-          for (const file of req.files["images"]) {
+      if (["image", "signature"].includes(question.answerType)) {
+        if (req.files && req.files["uploadedImages"]) {
+          for (const file of req.files["uploadedImages"]) {
             const filePath = file.path;
             const fileBuffer = fs.readFileSync(filePath);
             const originalName = path.basename(filePath);
@@ -119,35 +89,31 @@ const createDriverResponse = async (req, res) => {
     // Resolve the branches and units based routes on user input
     const resolvedBranches = [];
     for (const branchCode of branches) {
-      const branch = await BranchModel.findOne({ branchCode: branchCode }); // Assuming Branch has 'code' field
+      const branch = await BranchModel.findOne({ branchCode: branchCode });
       if (branch) {
         resolvedBranches.push(branch._id);
       } else {
-        return res
-          .status(400)
-          .json({ message: `Branch with code ${branchCode} not found.` });
+        return res.status(400).json({ message: `Branch with code ${branchCode} not found.` });
       }
     }
+
     const resolvedRoutes = [];
     for (const routeNumber of routes) {
-      const route = await RouteModel.findOne({ routeNumber: routeNumber }); // Assuming Branch has 'code' field
+      const route = await RouteModel.findOne({ routeNumber: routeNumber });
       if (route) {
         resolvedRoutes.push(route._id);
       } else {
-        return res
-          .status(400)
-          .json({ message: `Routes with code ${routeNumber} not found.` });
+        return res.status(400).json({ message: `Route with code ${routeNumber} not found.` });
       }
     }
+
     const resolvedUnits = [];
     for (const unitNumber of units) {
-      const unit = await CarModel.findOne({ unitNumber: unitNumber }); // Assuming Car has 'number' field
+      const unit = await CarModel.findOne({ unitNumber: unitNumber });
       if (unit) {
         resolvedUnits.push(unit._id);
       } else {
-        return res
-          .status(400)
-          .json({ message: `Unit with number ${unitNumber} not found.` });
+        return res.status(400).json({ message: `Unit with number ${unitNumber} not found.` });
       }
     }
 
@@ -175,6 +141,7 @@ const createDriverResponse = async (req, res) => {
     });
   }
 };
+
 
 const getAllResponses = async (req, res) => {
   try {
