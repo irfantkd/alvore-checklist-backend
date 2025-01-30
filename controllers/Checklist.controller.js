@@ -18,6 +18,7 @@ const createChecklist = async (req, res) => {
     //     .status(403)
     //     .json({ message: "Only admins can create checklists." });
     // }
+    const uploadedFiles = [];
 
     // Verify all branches exist
     console.log("branches", branches);
