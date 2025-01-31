@@ -31,6 +31,25 @@ const createDriverResponse = async (req, res) => {
 
     // Prepare an array for uploaded image URLs
     const uploadedFiles = [];
+// Before saving the request, parse `choices` correctly
+for (const answer of answers) {
+  if (typeof answer.choices === "string") {
+    try {
+      answer.choices = JSON.parse(answer.choices); // ✅ Parse JSON string to array
+    } catch (error) {
+      return res.status(400).json({
+        message: `Invalid format for choices in questionId ${answer.questionId}. Expected a JSON array.`,
+      });
+    }
+  }
+
+  // Ensure `choices` is an array
+  if (!Array.isArray(answer.choices)) {
+    return res.status(400).json({
+      message: `Invalid choices format for questionId ${answer.questionId}. Must be an array.`,
+    });
+  }
+}
 
     // Validate and process the answers
     for (const answer of answers) {
