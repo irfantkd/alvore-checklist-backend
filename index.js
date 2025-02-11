@@ -94,7 +94,8 @@ const BranchRoutes = require("./routes/Branch.routes");
 const RouteRoutes = require("./routes/Route.routes");
 const DriverResponseRoutes = require("./routes/DriverResponse.routes");
 const ChecklistRoutes = require("./routes/Checklist.routes");
-
+const VehicleCategoryRoutes = require("./routes/vehicleCategory.routes");
+const InsuranceCompanyRoutes = require("./routes/InsuranceCompany.routes");
 // Create upload directory if it doesn't exist
 
 // Configure Multer for file uploads
@@ -139,7 +140,8 @@ app.use("/branch", BranchRoutes);
 app.use("/route", RouteRoutes);
 app.use("/driver", DriverResponseRoutes);
 app.use("/checklist", ChecklistRoutes);
-
+app.use("/vehicle-category", VehicleCategoryRoutes);
+app.use("/insurance-companies", InsuranceCompanyRoutes);
 // Upload Route
 app.post(
   "/upload",

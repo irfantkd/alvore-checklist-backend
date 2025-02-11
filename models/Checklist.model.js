@@ -6,7 +6,8 @@ const checklistSchema = new mongoose.Schema({
   },
   categories: [
     {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "VehicleCategory"
     },
   ],
   branches: [

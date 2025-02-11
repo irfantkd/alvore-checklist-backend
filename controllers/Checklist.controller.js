@@ -5,11 +5,45 @@ const BranchModel = require("../models/Branch.model");
 const fs = require("fs");
 const path = require("path");
 const { uploadMultiToSrv } = require("../utils/sirvUploader");
+const VehicleCategoryModel = require("../models/VehicleCategory.model");
 
 // Create check list
 const createChecklist = async (req, res) => {
   try {
     const { title, questions, userid, branches, categories } = req.body;
+
+    // Validate categories array
+    if (!categories || !Array.isArray(categories)) {
+      return res.status(400).json({
+        success: false,
+        message: "Categories must be provided as an array"
+      });
+    }
+
+    // Verify categories exist and are valid ObjectIds
+    const validCategories = categories.filter(id => mongoose.Types.ObjectId.isValid(id));
+    if (validCategories.length !== categories.length) {
+      return res.status(400).json({
+        success: false,
+        message: "One or more category IDs are invalid",
+        invalidCategories: categories.filter(id => !mongoose.Types.ObjectId.isValid(id))
+      });
+    }
+
+    // Find all valid categories
+    const categoryObjects = await VehicleCategoryModel.find({
+      _id: { $in: validCategories }
+    });
+
+    if (categoryObjects.length !== categories.length) {
+      const foundIds = categoryObjects.map(cat => cat._id.toString());
+      const missingCategories = categories.filter(id => !foundIds.includes(id));
+      return res.status(404).json({ 
+        success: false,
+        message: "One or more categories not found",
+        missingCategories
+      });
+    }
 
     // Verify the user is an admin
     // const user = await UserModel.findById(userid);
@@ -68,17 +102,22 @@ const createChecklist = async (req, res) => {
       uploadedImages,
       createdBy: userid,
       branches: branchIds,
-      categories,
+      categories: validCategories,
     });
 
     await checklist.save();
-    res
-      .status(201)
-      .json({ message: "Checklist created successfully", checklist });
+    res.status(201).json({ 
+      success: true,
+      message: "Checklist created successfully", 
+      checklist 
+    });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error creating checklist", error: error.message });
+    console.error("Checklist creation error:", error);
+    res.status(500).json({ 
+      success: false,
+      message: "Error creating checklist", 
+      error: error.message 
+    });
   }
 };
 

@@ -20,9 +20,9 @@ const carSchema = new mongoose.Schema(
       trim: true,
     },
     category: {
-      type: String,
-      required: [true, "Category is required"], // Ensure category is provided
-      enum: ["Delivery Units", "Sales Units", "Supervision Units"], // Define allowed categories
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "VehicleCategory",
+      required: [true, "Category is required"],
     },
     color: {
       type: String,
@@ -42,8 +42,9 @@ const carSchema = new mongoose.Schema(
       type: String,
     },
     insuranceCompany: {
-      type: String,
-      trim: true,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "InsuranceCompany",
+      required: [true, "Insurance company is required"],
     },
     branch: {
       type: mongoose.Schema.Types.ObjectId,
