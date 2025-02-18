@@ -10,6 +10,8 @@ const {
   sendOTP,
   verifyOTP,
   resetPassword,
+  editUser,
+  deleteUser,
 } = require("../controllers/User.controller");
 const { upload } = require("../utils/sirvUploader");
 const uploadFields = upload.fields([
@@ -32,5 +34,11 @@ router.put("/user/update", uploadFields, AuthCheck, editProfile); // Admin only
 router.post("/forgot-password/send-otp", sendOTP);
 router.post("/forgot-password/verify-otp", verifyOTP);
 router.post("/forgot-password/reset", resetPassword);
+
+// Edit user
+router.put("/users/:id", editUser);
+
+// Delete user
+router.delete("/users/:id", deleteUser);
 
 module.exports = router;

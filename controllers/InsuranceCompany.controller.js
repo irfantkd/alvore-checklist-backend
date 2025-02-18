@@ -48,7 +48,40 @@ const getAllInsuranceCompanies = async (req, res) => {
   }
 };
 
+// Delete an insurance company
+const deleteInsuranceCompany = async (req, res) => {
+  try {
+    const { userid } = req.body; // Get user ID from request body
+    const userobjid = new mongoose.Types.ObjectId(userid);
+    const user = await UserModel.findById(userobjid);
+    
+    if (!user || user.role !== "admin") {
+      return res.status(403).json({ message: "Only admins can delete insurance companies." });
+    }
+
+    const { id } = req.params; // Get insurance company ID from URL parameters
+    const deletedCompany = await InsuranceCompanyModel.findByIdAndDelete(id);
+
+    if (!deletedCompany) {
+      return res.status(404).json({ message: "Insurance company not found." });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Insurance company deleted successfully.",
+      data: deletedCompany,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete insurance company",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createInsuranceCompany,
   getAllInsuranceCompanies,
+  deleteInsuranceCompany,
 }; 

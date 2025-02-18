@@ -11,7 +11,7 @@ const AuthCheck = require("../middlewares/Auth.middleware");
 const { upload } = require("../utils/sirvUploader");
 
 const router = express.Router();
-const uploadFields = upload.fields([{ name: "uploadedImages", maxCount: 5 }]); // Allow up to 5 images
+const uploadFields = upload.fields([{ name: "uploadedImages", maxCount: 10 }]); // Allow up to 10 images
 
 // Routes for checklist
 router.post("/create", uploadFields, AuthCheck, createChecklist); // Create a new checklist

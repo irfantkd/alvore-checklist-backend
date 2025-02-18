@@ -10,7 +10,7 @@ const VehicleCategoryModel = require("../models/VehicleCategory.model");
 // Create check list
 const createChecklist = async (req, res) => {
   try {
-    const { title, questions, userid, branches, categories } = req.body;
+    const { title, categories, branches, questions, userid } = req.body;
 
     // Validate categories array
     if (!categories || !Array.isArray(categories)) {
@@ -52,7 +52,6 @@ const createChecklist = async (req, res) => {
     //     .status(403)
     //     .json({ message: "Only admins can create checklists." });
     // }
-    const uploadedFiles = [];
 
     // Verify all branches exist
     console.log("branches", branches);
@@ -72,14 +71,15 @@ const createChecklist = async (req, res) => {
     const uploadedImages = [];
     if (req.files) {
       for (const [index, question] of questions.entries()) {
-        const files = req.files[`uploadedImages[${index}]`]; // Expecting files with keys like 'uploadedImages[0]', 'uploadedImages[1]'
+        const files = req.files.uploadedImages; // Expecting files under 'uploadedImages'
         if (files) {
           const fileUrls = [];
           for (const file of files) {
-            const filePath = file.path;
-            const fileBuffer = fs.readFileSync(filePath);
-            const originalName = path.basename(filePath);
+            const filePath = file.path; // Path to the uploaded file
+            const fileBuffer = fs.readFileSync(filePath); // Read the file as a buffer
+            const originalName = path.basename(filePath); // Get the filename
 
+            // Call your upload function to upload the image
             const url = await uploadMultiToSrv(fileBuffer, originalName);
             fileUrls.push(url);
           }
@@ -88,35 +88,28 @@ const createChecklist = async (req, res) => {
       }
     }
 
-    // Attach uploaded images to their respective questions
-    const formattedQuestions = questions.map((q, index) => ({
-      ...q,
-      uploadedImages: uploadedFiles[index],
-    }));
-
-    const branchIds = branchObjects.map((branch) => branch._id);
-
+    // Create the checklist
     const checklist = new Checklist({
       title,
-      questions,
-      uploadedImages,
-      createdBy: userid,
-      branches: branchIds,
       categories: validCategories,
+      branches: branchObjects.map((branch) => branch._id),
+      questions,
+      uploadedImages, // Attach uploaded images
+      createdBy: userid,
     });
 
     await checklist.save();
-    res.status(201).json({ 
+    res.status(201).json({
       success: true,
-      message: "Checklist created successfully", 
-      checklist 
+      message: "Checklist created successfully",
+      checklist,
     });
   } catch (error) {
-    console.error("Checklist creation error:", error);
-    res.status(500).json({ 
+    console.error("Error creating checklist:", error);
+    res.status(500).json({
       success: false,
-      message: "Error creating checklist", 
-      error: error.message 
+      message: "Error creating checklist",
+      error: error.message,
     });
   }
 };

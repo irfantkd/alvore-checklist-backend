@@ -438,6 +438,81 @@ const resetPassword = async (req, res) => {
   }
 };
 
+// Edit User
+const editUser = async (req, res) => {
+  try {
+    const { id } = req.params; // Get user ID from URL parameters
+    const { firstname, lastname, username, phone, role } = req.body;
+
+    // Validate role to prevent unauthorized updates to certain fields
+    if (role && role !== "admin") {
+      return res.status(403).json({
+        message: "You are not allowed to update the role field.",
+      });
+    }
+
+    // Check if the user exists
+    const user = await UserModel.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Check if the username already exists
+    if (username && username !== user.username) {
+      const existingUsername = await UserModel.findOne({ username });
+      if (existingUsername) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+    }
+
+    // Check if the phone number already exists
+    if (phone && phone !== user.phone) {
+      const existingPhone = await UserModel.findOne({ phone });
+      if (existingPhone) {
+        return res.status(400).json({ message: "Phone number already exists" });
+      }
+    }
+
+    // Update user details
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      id,
+      { firstname, lastname, username, phone, role },
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json({
+      message: "User updated successfully.",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error("Error updating user:", error.message);
+    res.status(500).json({ message: "Server error." });
+  }
+};
+
+// Delete User
+const deleteUser = async (req, res) => {
+  try {
+    console.log("Delete User ID:", req.params.id); // Log the user ID being deleted
+    const { id } = req.params; // Get user ID from URL parameters
+
+    // Check if the user exists
+    const user = await UserModel.findById(id);
+    if (!user) {
+      console.log("User not found:", id); // Log if user is not found
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Delete the user
+    await UserModel.findByIdAndDelete(id);
+
+    res.status(200).json({ message: "User deleted successfully." });
+  } catch (error) {
+    console.error("Error deleting user:", error.message);
+    res.status(500).json({ message: "Server error." });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
@@ -448,4 +523,6 @@ module.exports = {
   sendOTP,
   verifyOTP,
   resetPassword,
+  editUser,
+  deleteUser,
 };
