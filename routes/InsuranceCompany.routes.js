@@ -13,6 +13,6 @@ router.post("/create", AuthCheck, createInsuranceCompany);
 router.get("/get-all", AuthCheck, getAllInsuranceCompanies);
 
 // Delete insurance company
-router.delete("/:id", AuthCheck, deleteInsuranceCompany);
+router.delete("/delete/:id", AuthCheck, deleteInsuranceCompany);
 
 module.exports = router; 
