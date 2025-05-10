@@ -10,140 +10,35 @@ const { uploadMultiToSrv } = require("../utils/sirvUploader"); // Assuming you h
 const RouteModel = require("../models/Route.model");
 
 // Create a new driver response
-
 const createDriverResponse = async (req, res) => {
   try {
-    const { userid, answers, branches, units, routes } = req.body; // Extracting data from the request body
-    const checklistId = req.params.id; // Checklist ID from URL params
+    const { checklistId, driverId, answers, branches, units, routes } = req.body;
 
-    // Convert IDs to ObjectId for MongoDB queries
-    const checklistObjId = new mongoose.Types.ObjectId(checklistId);
-    const userObjId = new mongoose.Types.ObjectId(userid);
-
-    // Fetch the checklist and validate its existence
-    const checklist = await ChecklistModel.findById(checklistObjId);
+    // Fetch the checklist to get question labels
+    const checklist = await ChecklistModel.findById(checklistId);
     if (!checklist) {
-      return res.status(404).json({ message: "Checklist not found." });
+      return res.status(404).json({ message: "Checklist not found" });
     }
 
-    // Extract question IDs from the checklist
-    const checklistQuestionIds = checklist.questions.map((q) => q._id.toString());
-
-    // Prepare an array for uploaded image URLs
-    const uploadedFiles = [];
-// Before saving the request, parse `choices` correctly
-for (const answer of answers) {
-  if (typeof answer.choices === "string") {
-    try {
-      answer.choices = JSON.parse(answer.choices); // ✅ Parse JSON string to array
-    } catch (error) {
-      return res.status(400).json({
-        message: `Invalid format for choices in questionId ${answer.questionId}. Expected a JSON array.`,
-      });
-    }
-  }
-
-  // Ensure `choices` is an array
-  if (!Array.isArray(answer.choices)) {
-    return res.status(400).json({
-      message: `Invalid choices format for questionId ${answer.questionId}. Must be an array.`,
+    // Enhance answers with question labels
+    const enhancedAnswers = answers.map(answer => {
+      const question = checklist.questions.find(q => 
+        q._id.toString() === answer.questionId.toString()
+      );
+      
+      return {
+        ...answer,
+        questionLabel: question ? question.label : "Unknown Question" // Add question label
+      };
     });
-  }
-}
 
-    // Validate and process the answers
-    for (const answer of answers) {
-      // Ensure the questionId exists in the checklist's questions
-      if (!checklistQuestionIds.includes(answer.questionId)) {
-        return res.status(400).json({
-          message: `Invalid questionId: ${answer.questionId} does not match the checklist questions.`,
-        });
-      }
-
-      // Process different answer types based on the question type
-      const question = checklist.questions.find((q) => q._id.toString() === answer.questionId);
-      if (question) {
-        // Validate dropdown/mcqs
-        if (["dropdown", "mcqs"].includes(question.answerType)) {
-          const validChoices = question.choices.map((choice) => choice.text);
-          if (Array.isArray(answer.answer)) {
-            const invalidAnswers = answer.answer.filter((ans) => !validChoices.includes(ans));
-            if (invalidAnswers.length > 0) {
-              return res.status(400).json({
-                message: `Invalid answers: ${invalidAnswers.join(",")} are not valid choices for questionId ${answer.questionId}.`,
-              });
-            }
-          } else if (!validChoices.includes(answer.answer)) {
-            return res.status(400).json({
-              message: `Invalid answer: ${answer.answer} is not a valid choice for questionId ${answer.questionId}.`,
-            });
-          }
-        }
-
-        // Handle other answer types like text, date, etc.
-      }
-
-      // Handle image file uploads if necessary (upload to server and store URLs)
-      if (["image", "signature"].includes(question.answerType)) {
-        if (req.files && req.files["uploadedImages"]) {
-          for (const file of req.files["uploadedImages"]) {
-            const filePath = file.path;
-            const fileBuffer = fs.readFileSync(filePath);
-            const originalName = path.basename(filePath);
-            const url = await uploadMultiToSrv(fileBuffer, originalName); // Upload the image and get URL
-            uploadedFiles.push(url);
-          }
-        }
-      }
-
-      // Attach uploaded image URLs to the answer (if any)
-      if (uploadedFiles.length > 0) {
-        if (!answer.uploadedImages) {
-          answer.uploadedImages = [];
-        }
-        answer.uploadedImages.push(...uploadedFiles);
-      }
-    }
-
-    // Resolve the branches and units based routes on user input
-    const resolvedBranches = [];
-    for (const branchCode of branches) {
-      const branch = await BranchModel.findOne({ branchCode: branchCode });
-      if (branch) {
-        resolvedBranches.push(branch._id);
-      } else {
-        return res.status(400).json({ message: `Branch with code ${branchCode} not found.` });
-      }
-    }
-
-    const resolvedRoutes = [];
-    for (const routeNumber of routes) {
-      const route = await RouteModel.findOne({ routeNumber: routeNumber });
-      if (route) {
-        resolvedRoutes.push(route._id);
-      } else {
-        return res.status(400).json({ message: `Route with code ${routeNumber} not found.` });
-      }
-    }
-
-    const resolvedUnits = [];
-    for (const unitNumber of units) {
-      const unit = await CarModel.findOne({ unitNumber: unitNumber });
-      if (unit) {
-        resolvedUnits.push(unit._id);
-      } else {
-        return res.status(400).json({ message: `Unit with number ${unitNumber} not found.` });
-      }
-    }
-
-    // Save the driver response to the database
     const driverResponse = new DriverResponse({
-      checklistId: checklistObjId,
-      driverId: userObjId,
-      branches: resolvedBranches,
-      units: resolvedUnits,
-      routes: resolvedRoutes,
-      answers,
+      checklistId,
+      driverId,
+      answers: enhancedAnswers, // Use enhanced answers with labels
+      branches,
+      units,
+      routes,
     });
 
     await driverResponse.save();
@@ -161,39 +56,59 @@ for (const answer of answers) {
   }
 };
 
-
 const getAllResponses = async (req, res) => {
   try {
     // Fetch all responses
     const responses = await DriverResponse.find()
       .populate("driverId", "firstname lastname username role")
-      .populate("checklistId", "title category branch")
+      .populate("checklistId", "title category branch questions") // Include questions to get labels
       .populate({
-        path: "units", // Populating units (cars)
-        select: "unitNumber", // Assuming unitNumber is the field on the Car model
+        path: "units",
+        select: "unitNumber",
       })
       .populate({
-        path: "branches", // Populating branches
-        select: "branchCode", // Assuming branchCode is the field on the Branch model
+        path: "branches",
+        select: "branchCode",
       })
       .populate({
-        path: "routes", // Populating branches
-        select: "routeNumber", // Assuming branchCode is the field on the Branch model
+        path: "routes",
+        select: "routeNumber",
       })
-      .sort({ createdAt: -1 }); // Sorting by createdAt in descending order (newest first)
+      .sort({ createdAt: -1 });
 
     if (!responses.length) {
       return res.status(404).json({ message: "No responses found." });
     }
 
-    res.status(200).json(responses);
+    // Enhance each response with question labels
+    const enhancedResponses = responses.map(response => {
+      const responseObj = response.toObject();
+      
+      // Add question labels to each answer
+      if (responseObj.answers && responseObj.checklistId && responseObj.checklistId.questions) {
+        responseObj.answers = responseObj.answers.map(answer => {
+          const question = responseObj.checklistId.questions.find(
+            q => q._id.toString() === answer.questionId.toString()
+          );
+          
+          return {
+            ...answer,
+            questionLabel: question ? question.label : "Unknown Question"
+          };
+        });
+      }
+      
+      return responseObj;
+    });
+
+    res.status(200).json(enhancedResponses);
   } catch (error) {
     console.error("Error fetching all responses:", error);
     res.status(500).json({ message: "Error fetching all responses.", error });
   }
 };
 
-// Updated Driver responce
+// Updated Driver response
 const updateDriverResponse = async (req, res) => {
   try {
     const responseId = req.params.responseId;
@@ -215,11 +130,12 @@ const updateDriverResponse = async (req, res) => {
       });
     }
 
-    // Validate the question IDs in the answers
-    const checklistQuestionIds = response.checklistId.questions.map((q) =>
-      q._id.toString()
-    );
-
+    // Validate the question IDs in the answers and add labels
+    const checklistQuestions = response.checklistId.questions;
+    const checklistQuestionIds = checklistQuestions.map(q => q._id.toString());
+    
+    const enhancedAnswers = [];
+    
     for (const answer of answers) {
       if (!checklistQuestionIds.includes(answer.questionId)) {
         return res.status(400).json({
@@ -227,54 +143,64 @@ const updateDriverResponse = async (req, res) => {
         });
       }
 
+      // Find the corresponding question to get its label
+      const question = checklistQuestions.find(
+        q => q._id.toString() === answer.questionId
+      );
+      
+      // Create enhanced answer with label
+      const enhancedAnswer = {
+        ...answer,
+        questionLabel: question ? question.label : "Unknown Question"
+      };
+
       // Handle image-based answers
       if (
         ["image", "signature", "uploadimageslect", "takepicture"].includes(
-          response.checklistId.questions.find(
-            (q) => q._id.toString() === answer.questionId
-          )?.answerType
+          question?.answerType
         )
       ) {
         const uploadedFiles = [];
         if (req.files && req.files["images"]) {
-          // Assuming the key for the images field is "images"
           for (const file of req.files["images"]) {
             const filePath = file.path;
             const fileBuffer = fs.readFileSync(filePath);
-            const originalName = path.basename(filePath); // Extract the filename
+            const originalName = path.basename(filePath);
 
-            // Upload to the server (adjust this function as needed)
+            // Upload to the server
             const url = await uploadMultiToSrv(fileBuffer, originalName);
             uploadedFiles.push(url);
           }
         }
 
         if (uploadedFiles.length > 0) {
-          if (!answer.uploadedImages) {
-            answer.uploadedImages = [];
+          if (!enhancedAnswer.uploadedImages) {
+            enhancedAnswer.uploadedImages = [];
           }
-          answer.uploadedImages.push(...uploadedFiles);
+          enhancedAnswer.uploadedImages.push(...uploadedFiles);
         }
       }
+      
+      enhancedAnswers.push(enhancedAnswer);
     }
 
-    // Update the branches and units and routes if they are provided
+    // Update the branches, units and routes if provided
     if (branches) {
       response.branches = branches.map(
-        (branch) => new mongoose.Types.ObjectId(branch)
+        branch => new mongoose.Types.ObjectId(branch)
       );
     }
     if (routes) {
       response.routes = routes.map(
-        (route) => new mongoose.Types.ObjectId(route)
+        route => new mongoose.Types.ObjectId(route)
       );
     }
     if (units) {
-      response.units = units.map((unit) => new mongoose.Types.ObjectId(unit));
+      response.units = units.map(unit => new mongoose.Types.ObjectId(unit));
     }
 
     // Update the response answers
-    response.answers = answers;
+    response.answers = enhancedAnswers;
 
     // Save the updated driver response
     await response.save();
@@ -296,36 +222,52 @@ const updateDriverResponse = async (req, res) => {
 const getResponsesByChecklist = async (req, res) => {
   try {
     const checklistId = req.params.id;
-    const checklistobjId = new mongoose.Types.ObjectId(checklistId);
+    console.log("Fetching responses for checklist ID:", checklistId);
 
-    // Find responses by checklist
-    const responses = await DriverResponse.find({ checklistId: checklistobjId })
-      .populate("driverId", "firstname lastname username role")
-      .populate("checklistId", "title category branch")
-      .populate({
-        path: "units", // Populating units (cars)
-        select: "unitNumber", // Assuming unitNumber is the field on the Car model
-      })
-      .populate({
-        path: "branches", // Populating branches
-        select: "branchCode", // Assuming branchCode is the field on the Branch model
-      })
-      .populate({
-        path: "routes", // Populating branches
-        select: "routeNumber", // Assuming branchCode is the field on the Branch model
-      })
-      .sort({ createdAt: -1 }); // Sorting by createdAt in descending order (newest first)
-
-    if (!responses.length) {
-      return res
-        .status(404)
-        .json({ message: "No responses found for this checklist." });
+    // First get the checklist to access question labels
+    const checklist = await ChecklistModel.findById(checklistId);
+    if (!checklist) {
+      return res.status(404).json({ message: "Checklist not found." });
     }
 
-    res.status(200).json(responses);
+    const responses = await DriverResponse.find({ checklistId })
+      .populate("driverId", "firstname lastname username role")
+      .populate("checklistId", "title")
+      .populate("branches")
+      .populate("units")
+      .populate("routes");
+
+    console.log("Responses found:", responses);
+
+    if (!responses.length) {
+      return res.status(404).json({ message: "No responses found for this checklist." });
+    }
+
+    // Enhance responses with question labels
+    const enhancedResponses = responses.map(response => {
+      const responseObj = response.toObject();
+      
+      // Add question labels to each answer
+      if (responseObj.answers) {
+        responseObj.answers = responseObj.answers.map(answer => {
+          const question = checklist.questions.find(
+            q => q._id.toString() === answer.questionId.toString()
+          );
+          
+          return {
+            ...answer,
+            questionLabel: question ? question.label : "Unknown Question"
+          };
+        });
+      }
+      
+      return responseObj;
+    });
+
+    res.status(200).json(enhancedResponses);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error fetching responses.", error });
+    console.error("Error fetching responses by checklist:", error);
+    res.status(500).json({ message: "Error fetching responses.", error: error.message });
   }
 };
 
@@ -336,21 +278,21 @@ const getResponsesByDriver = async (req, res) => {
 
     // Find responses by driver
     const responses = await DriverResponse.find({ driverId })
-      .populate("checklistId", "title category branch")
+      .populate("checklistId", "title category branch questions") // Include questions to get labels
       .populate("driverId", "firstname lastname username role")
       .populate({
-        path: "units", // Populating units (cars)
-        select: "unitNumber", // Assuming unitNumber is the field on the Car model
+        path: "units",
+        select: "unitNumber",
       })
       .populate({
-        path: "branches", // Populating branches
-        select: "branchCode", // Assuming branchCode is the field on the Branch model
+        path: "branches",
+        select: "branchCode",
       })
       .populate({
         path: "routes",
         select: "routeNumber",
       })
-      .sort({ createdAt: -1 }); // Sorting by createdAt in descending order (newest first)
+      .sort({ createdAt: -1 });
 
     if (!responses.length) {
       return res
@@ -358,7 +300,28 @@ const getResponsesByDriver = async (req, res) => {
         .json({ message: "No responses found for this driver." });
     }
 
-    res.status(200).json(responses);
+    // Enhance each response with question labels
+    const enhancedResponses = responses.map(response => {
+      const responseObj = response.toObject();
+      
+      // Add question labels to each answer
+      if (responseObj.answers && responseObj.checklistId && responseObj.checklistId.questions) {
+        responseObj.answers = responseObj.answers.map(answer => {
+          const question = responseObj.checklistId.questions.find(
+            q => q._id.toString() === answer.questionId.toString()
+          );
+          
+          return {
+            ...answer,
+            questionLabel: question ? question.label : "Unknown Question"
+          };
+        });
+      }
+      
+      return responseObj;
+    });
+
+    res.status(200).json(enhancedResponses);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error fetching responses.", error });
